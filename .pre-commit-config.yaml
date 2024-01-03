@@ -1,0 +1,20 @@
+repos:
+- repo: http://172.23.111.253:3000/mirror/black
+  rev: 22.3.0
+  hooks:
+  - id: black
+- repo: http://172.23.111.253:3000/mirror/pre-commit-hooks
+  rev: v2.3.0
+  hooks:
+  - id: flake8
+- repo: http://172.23.111.253:3000/mirror/pip-tools
+  rev: 7.3.0
+  hooks:
+  - id: pip-compile
+    name: pip-compile dev-requirements.in
+    args: [--no-emit-index-url,--no-emit-trusted-host, requirements/dev-requirements.in]
+    files: ^requirements/dev-requirements\.(in|txt)$
+  - id: pip-compile
+    name: pip-compile requirements.in
+    args: [--no-emit-index-url,--no-emit-trusted-host, requirements/requirements.in]
+    files: ^requirements/requirements\.(in|txt)$

@@ -1,0 +1,10 @@
+[default]
+LOG_FILE = "log/debug.log"
+APP_NAME = "reportservice"
+HOST = "0.0.0.0"
+PORT = 3002
+DEBUG_MODE = true
+
+[production]
+DB_URL = "mongodb://dat:password@mongo:27017/general?authSource=admin&retryWrites=true&w=majority"
+DEBUG_MODE = false

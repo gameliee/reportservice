@@ -1,0 +1,8 @@
+-c requirements.txt
+pip-tools
+pre-commit
+flake8
+black
+line_profiler
+pytest
+pytest-cov

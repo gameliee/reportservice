@@ -1,0 +1,7 @@
+__pycache__/
+.secret.toml
+.coverage
+venv
+*.lprof
+.vscode
+*.xlsx

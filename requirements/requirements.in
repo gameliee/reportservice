@@ -1,0 +1,9 @@
+requests
+dynaconf
+pydantic > 2.0
+pydantic-settings
+pydantic[email]
+fastapi[all]==0.100.0
+uvicorn[standard]
+
+psutil # for monitor threads
