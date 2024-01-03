@@ -6,3 +6,4 @@ black
 line_profiler
 pytest
 pytest-cov
+pytest-docker

@@ -4,6 +4,8 @@
 #
 #    pip-compile --no-emit-index-url --no-emit-trusted-host requirements/dev-requirements.in
 #
+attrs==23.2.0
+    # via pytest-docker
 black==23.12.1
     # via -r requirements/dev-requirements.in
 build==1.0.3
@@ -66,7 +68,10 @@ pytest==7.4.4
     # via
     #   -r requirements/dev-requirements.in
     #   pytest-cov
+    #   pytest-docker
 pytest-cov==4.1.0
+    # via -r requirements/dev-requirements.in
+pytest-docker==2.0.1
     # via -r requirements/dev-requirements.in
 pyyaml==6.0.1
     # via

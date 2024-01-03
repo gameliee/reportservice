@@ -20,7 +20,13 @@ class ServerSettings(BaseSettings):
     PORT: int = 3002
 
 
-class AppSettings(CommonSettings, ServerSettings):
+class DatabaseSettings(BaseSettings):
+    DB_URL: str
+    DB_NAME: str
+    DB_COLLECTION_REPORT: str
+
+
+class AppSettings(CommonSettings, ServerSettings, DatabaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
 

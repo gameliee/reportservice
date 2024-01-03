@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorClient
 from .settings import settings
 from . import customlog
 
@@ -19,11 +20,24 @@ async def log_everythings(request: Request):
         logger.info(f"Received request: {request.method} {request.url}")
 
 
+async def init_database(app: FastAPI):
+    """init the database connection"""
+    app.mongodb_client = AsyncIOMotorClient(settings.DB_URL, uuidRepresentation="standard")
+    app.mongodb = app.mongodb_client[settings.DB_NAME]
+
+
+async def close_database(app: FastAPI):
+    """close the database connection"""
+    app.mongodb_client.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """manage the database connection, the scheduler using lifespan"""
+    await init_database(app)
     app.logger = logging.getLogger(settings.APP_NAME)
     yield
+    await close_database(app)
 
 
 app = FastAPI(lifespan=lifespan, dependencies=[Depends(log_everythings)])

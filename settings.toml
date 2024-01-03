@@ -5,6 +5,10 @@ HOST = "0.0.0.0"
 PORT = 3002
 DEBUG_MODE = true
 
+DB_URL = "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+DB_NAME = "carsApp"
+DB_COLLECTION_REPORT = "reports"
+
 [production]
 DB_URL = "mongodb://dat:password@mongo:27017/general?authSource=admin&retryWrites=true&w=majority"
 DEBUG_MODE = false
