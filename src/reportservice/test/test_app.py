@@ -9,3 +9,8 @@ def test_healthcheck(testclient: TestClient):
 def test_version(testclient: TestClient):
     response = testclient.get("/version")
     assert response.status_code == 200
+
+
+def test_connection_status(testclient: TestClient):
+    response = testclient.get("/connection-status")
+    assert response.status_code == 200

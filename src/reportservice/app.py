@@ -64,6 +64,18 @@ async def healthcheck():
     }
 
 
+@app.get("/connection-status")
+async def connection_status():
+    try:
+        await app.mongodb_client.server_info()
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "Connected"})
+    except Exception as e:
+        raise e
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"status": "Disconnected", "error": str(e)}
+        )
+
+
 @app.get("/version")
 async def version():
     return JSONResponse(status_code=status.HTTP_200_OK, content={"version": "0.0.1"})

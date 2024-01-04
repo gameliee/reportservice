@@ -49,6 +49,5 @@ def dbsetup(request):
     dbport = docker_services.port_for("mongo", 27017)
     docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive(docker_ip, dbport))
 
-    # TODO: Override database settings settings.DB_URL, settings.DB_NAME
-    mongo = f"mongodb://dat:password@{docker_ip}:{dbport}/general?authSource=admin&retryWrites=true&w=majority"
+    mongo = f"mongodb://foo:password@{docker_ip}:{dbport}/general?authSource=admin&retryWrites=true&w=majority"
     return mongo
