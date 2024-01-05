@@ -1,6 +1,7 @@
 import uuid
 import pytest
 from fastapi.testclient import TestClient
+from pymongo import MongoClient
 from reportservice.app import app
 from .settings import settings
 
@@ -15,11 +16,17 @@ def monkeypatch_session():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def patch_settings(monkeypatch_session, temp_log_file):
+def patch_settings(monkeypatch_session, temp_log_file, dburi):
+    monkeypatch_session.setattr(settings, "DB_URL", dburi)
     monkeypatch_session.setattr(settings, "LOG_FILE", temp_log_file)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def testsettings(monkeypatch_session, dburi):
+    return settings
+
+
 @pytest.fixture(scope="session")
-def testclient():
+def testclient(dburi):
     with TestClient(app) as cl:
         yield cl

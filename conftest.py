@@ -26,7 +26,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def dbsetup(request):
+def dburi(request):
     """ensure postgres db and central is up"""
 
     # if run test without `--createdb`, do not start up the mongo docker
