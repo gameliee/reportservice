@@ -8,3 +8,4 @@ uvicorn[standard]
 
 psutil # for monitor threads
 motor # for mongo database connect
+pandas # for forming the reports
