@@ -7,7 +7,8 @@ DEBUG_MODE = true
 
 DB_URL = "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
 DB_NAME = "FaceID"
-DB_COLLECTION_REPORT = "BodyFaceName"
+DB_COLLECTION_REPORT = "BodyFaceName" # TODO: remove this, only set in configurations
+DB_COLLECTION_SETTINGS = "ReportConfigurations"
 
 [production]
 DB_URL = "mongodb://dat:password@mongo:27017/general?authSource=admin&retryWrites=true&w=majority"

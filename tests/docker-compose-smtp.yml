@@ -1,0 +1,25 @@
+version: '3.10'
+
+volumes:
+  smtp-persistent:
+
+
+services:
+  smtp:
+    image: rnwood/smtp4dev:v3
+    restart: unless-stopped
+    volumes: 
+      - smtp-persistent:/app/smtp4dev/database
+      # - ./smtpconfig/appsettings.json:/app/appsettings.json:ro
+      # - ./certs:/app/certs                   # Mount SSL certificates
+    ports: 
+      - 8026:80 # web ui
+      - 1026:25 # SMTP
+      - 1466:465 # SMTP over SSL
+    environment:
+      - ServerOptions__HostName=localhost
+      - ServerOptions__TlsMode=ImplicitTls
+      # - ServerOptions__TlsMode=ImplicitTls
+      # - ServerOptions__TlsCertificate=/app/certs/smtp4dev.crt
+      # - ServerOptions__TlsCertificatePrivateKey=/app/certs/smtp4dev.key
+

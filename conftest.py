@@ -51,3 +51,50 @@ def dburi(request):
 
     mongo = f"mongodb://foo:password@{docker_ip}:{dbport}/general?authSource=admin&retryWrites=true&w=majority"
     return mongo
+
+
+@pytest.fixture(scope="session")
+def collectionsetttings(request):
+    return {
+        "staff_collection": "BodyFaceName",
+        "face_collection": "staff",
+    }
+
+
+@pytest.fixture(scope="session")
+def stmpsettings(request):
+    """A example email settings that actually works"""
+    if request.config.getoption("--createdb"):
+        return {
+            "enable": "true",
+            "account": "testnv@example.com",
+            "password": "anypassword",
+            "port": 25,
+            "server": "smtp",
+            "username": "testuser",
+            "useSSL": False,
+        }
+    else:
+        return {
+            "enable": "true",
+            "account": "testnv@example.com",
+            "password": "anypassword",
+            "port": 1026,
+            "server": "localhost",
+            "username": "testuser",
+            "useSSL": False,
+        }
+
+
+@pytest.fixture(scope="session")
+def excelfile(pytestconfig):
+    """Path to a example excel file"""
+    path = os.path.join(str(pytestconfig.rootdir), "tests", "test.xlsx")
+    return path
+
+
+@pytest.fixture(scope="session")
+def excelbytes(excelfile):
+    """Bytes of a example excel file"""
+    with open(excelfile, "rb") as f:
+        yield f.read()
