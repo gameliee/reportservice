@@ -1,0 +1,108 @@
+from base64 import b64encode, b64decode
+from datetime import datetime
+from jinja2 import Environment, BaseLoader
+from motor.motor_asyncio import AsyncIOMotorCollection
+from ..stat import (
+    get_people_count,
+    get_inout_count,
+    get_has_sample_count,
+    get_total_count
+)
+from ..logics import (
+    fill_excel,
+    excel_to_html,
+
+)
+from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate
+from ..config.email_spammer import EmailSpammer
+
+
+def get_weekday_vn(today):
+    vn_name = ["hai", "ba", "tư", "năm", "sáu", "bảy", "chủ nhật"]
+    return vn_name[today.isoweekday() - 1]
+
+
+def get_weekday_Vn(today):
+    vn_name = ["Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "Chủ Nhật"]
+    return vn_name[today.isoweekday() - 1]
+
+
+async def render(collection: AsyncIOMotorCollection, content: ContentModel, render_date: datetime) -> ContentModelRendered:
+    """render the content to a ContentModelRendered"""
+    day_begin = datetime.combine(date=render_date.date(), time=datetime.min.time())
+    day_end = datetime.combine(date=render_date.date(), time=datetime.max.time())
+    in_begin = datetime.combine(date=render_date.date(), time=content.checkin_begin.time())
+    in_end = in_begin + content.checkin_duration
+    out_begin = datetime.combine(date=render_date.date(), time=content.checkout_begin.time())
+    out_end = out_begin + content.checkout_duration
+
+    data = {  # noqa: F841
+        "year": render_date.year,
+        "month": render_date.month,
+        "date": render_date.day,
+        "hour": render_date.hour,
+        "min": render_date.minute,
+        "sec": render_date.second,
+        "weekday_vn": get_weekday_vn(render_date),
+        "weekday_Vn": get_weekday_Vn(render_date),
+        "people_count": get_people_count(collection, day_begin, day_end),
+        "has_sample_count": get_has_sample_count(collection, day_begin, day_end),
+        "checkin_count": get_inout_count(collection, in_begin, in_end),
+        "checkout_count": get_inout_count(collection, out_begin, out_end),
+        "total_count": get_inout_count(collection, day_begin, day_end), # BUG: this is not correct, change to begin of the day to end of the day
+        "table": "",
+    }
+
+    # excel related part
+    excel_bytes = b64decode(str(content.excel).encode("utf-8"))  # noqa: F841
+    fill_excel_bytes = None
+    if content.is_excel_uploaded():
+        fill_excel_bytes = fill_excel(eng, excelbytes=excel_bytes, begin=begin, end=end)
+        html = excel_to_html(fill_excel_bytes)
+        data["table"] = html
+
+    to = ",".join(content.to)
+    cc = ",".join(content.cc)
+    bcc = ",".join(content.bcc)
+    subject = content.get_subject_template().render(data)
+    body = content.get_body_template().render(data)
+
+    out = ContentModelRendered(to=to, cc=cc, bcc=bcc, subject=subject, body=body)
+
+    if content.attach is True and fill_excel_bytes is not None:
+        filename = content.get_attach_name_template().render(data)
+        b64_str = b64encode(fill_excel_bytes).decode("utf-8")
+        out.attach = b64_str
+        out.attach_name = filename
+
+    return out
+
+
+async def send(contentrenderd: ContentModelRendered, spammer: EmailSpammer):
+    """if sent, return the sent content, if not, return none"""
+    if spammer is None:
+        return None
+
+    if contentrenderd.attach is not None and contentrenderd.attach_name is not None:
+        excel_bytes = b64decode(contentrenderd.attach.encode("utf-8"))
+        excel_name = contentrenderd.attach_name
+        ret = spammer.send(
+            to=contentrenderd.to,
+            cc=contentrenderd.cc,
+            bcc=contentrenderd.bcc,
+            subject=contentrenderd.subject,
+            body=contentrenderd.body,
+            attachment_filename=excel_name,
+            attachment_data=excel_bytes,
+        )
+    else:
+        ret = spammer.send(
+            to=contentrenderd.to,
+            cc=contentrenderd.cc,
+            bcc=contentrenderd.bcc,
+            subject=contentrenderd.subject,
+            body=contentrenderd.body,
+            attachment_filename=None,
+        )
+
+    return ret

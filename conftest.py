@@ -2,6 +2,7 @@ import os
 import random
 import string
 import pytest
+from datetime import datetime
 
 
 @pytest.fixture(scope="session")
@@ -106,3 +107,10 @@ def excelbytes(excelfile):
 def random_collection_name(dburi):
     collection_name = "".join(random.choices(string.ascii_lowercase, k=10))
     return collection_name
+
+
+@pytest.fixture
+def test_time():
+    begin = datetime.fromisoformat("2023-12-27T00:00:00.000+00:00")
+    end = datetime.fromisoformat("2023-12-27T23:59:59.999+00:00")
+    return begin, end
