@@ -6,9 +6,8 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from .models import AppSettingsModel, AppSettingsModelUpdate
 from .email_spammer import EmailSpammer
-from ...settings import settings
+from ...settings import settings as globalsettings
 
-COLNAME = settings.DB_COLLECTION_SETTINGS
 router = APIRouter()
 
 
@@ -32,6 +31,7 @@ async def validate_settings(setting: AppSettingsModel) -> bool:
 
 @router.post("/", response_description="Create Settings", response_model=AppSettingsModel)
 async def create_settings(request: Request, setting: AppSettingsModel = Body(...)):
+    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
     latest = await request.app.mongodb[COLNAME].find_one()
     if latest is not None:
         raise HTTPException(status_code=303, detail="already have settings, please use PUT or DELETE")
@@ -47,6 +47,7 @@ async def create_settings(request: Request, setting: AppSettingsModel = Body(...
 
 @router.get("/", response_description="Get Settings", response_model=AppSettingsModel)
 async def get_settings(request: Request):
+    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
     latest = await request.app.mongodb[COLNAME].find_one()
     if not latest:
         raise HTTPException(status_code=404, detail="No settings found")
@@ -56,6 +57,7 @@ async def get_settings(request: Request):
 
 @router.put("/", response_description="Update settings", response_model=AppSettingsModel)
 async def update_settings(request: Request, setting: AppSettingsModelUpdate = Body(...)):
+    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
     latest = await request.app.mongodb[COLNAME].find_one()
     if not latest:
         raise HTTPException(status_code=404, detail="No settings found")
@@ -85,6 +87,7 @@ async def update_settings(request: Request, setting: AppSettingsModelUpdate = Bo
 
 @router.delete("/", response_description="Delete settings")
 async def delete_settings(request: Request):
+    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
     settings = await request.app.mongodb[COLNAME].find_one()
     if not settings:
         raise HTTPException(status_code=404, detail="No settings found")

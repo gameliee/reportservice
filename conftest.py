@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import pytest
 
 
@@ -98,3 +100,9 @@ def excelbytes(excelfile):
     """Bytes of a example excel file"""
     with open(excelfile, "rb") as f:
         yield f.read()
+
+
+@pytest.fixture(scope="session")
+def random_collection_name(dburi):
+    collection_name = "".join(random.choices(string.ascii_lowercase, k=10))
+    return collection_name

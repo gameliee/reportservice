@@ -21,34 +21,28 @@ def generate_setting(testclient: TestClient, settings_true):
     assert created[0] is True
 
 
-@pytest.fixture(scope="session")
-def delete_old_settings(testclient: TestClient) -> None:
-    response = testclient.delete(f"{PREFIX}/")
-    assert response.status_code == 200 or response.status_code == 404
-
-
-def test_get_settings1(testclient: TestClient, delete_old_settings):
+def test_get_settings1(testclient: TestClient):
     response = testclient.get(f"{PREFIX}/")
     assert response.status_code == 404
 
 
-def test_update_settings1(testclient: TestClient, delete_old_settings):
+def test_update_settings1(testclient: TestClient):
     payload = json.dumps({"smtp": {"username": "noway"}})
     response = testclient.put(f"{PREFIX}/", data=payload)
     assert response.status_code == 404
 
 
-def test_delete_settings(testclient: TestClient, delete_old_settings):
+def test_delete_settings(testclient: TestClient):
     response = testclient.delete(f"{PREFIX}/")
     assert response.status_code == 404
 
 
-def test_get_settings(testclient: TestClient, delete_old_settings, generate_setting):
+def test_get_settings(testclient: TestClient, generate_setting):
     response = testclient.get(f"{PREFIX}/")
     assert response.status_code == 200
 
 
-def test_update_settings2(testclient: TestClient, delete_old_settings, generate_setting):
+def test_update_settings2(testclient: TestClient, generate_setting):
     payload = json.dumps(
         {
             "something": {
@@ -60,13 +54,13 @@ def test_update_settings2(testclient: TestClient, delete_old_settings, generate_
     assert response.status_code == 422
 
 
-def test_update_settings3(testclient: TestClient, delete_old_settings, generate_setting, stmpsettings):
+def test_update_settings3(testclient: TestClient, generate_setting, stmpsettings):
     payload = json.dumps({"faceiddb": {"user": "user"}, "smtp": stmpsettings})
     response = testclient.put(f"{PREFIX}/", data=payload)
     assert response.status_code == 422
 
 
-def test_update_settings4(testclient: TestClient, delete_old_settings, generate_setting, collectionsetttings):
+def test_update_settings4(testclient: TestClient, generate_setting, collectionsetttings):
     payload = json.dumps(
         {
             "faceiddb": collectionsetttings,
@@ -79,7 +73,7 @@ def test_update_settings4(testclient: TestClient, delete_old_settings, generate_
     assert response.status_code == 200, response.json()
 
 
-def test_delete_settings2(testclient: TestClient, delete_old_settings, generate_setting):
+def test_delete_settings2(testclient: TestClient, generate_setting):
     response = testclient.delete(f"{PREFIX}/")
     assert response.status_code == 200
     created[0] = False
