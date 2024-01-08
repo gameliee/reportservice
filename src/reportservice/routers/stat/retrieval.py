@@ -11,6 +11,7 @@ async def get_people_count(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
+    """count all people in the database"""
     raise NotImplementedError
 
 
@@ -109,10 +110,30 @@ async def get_dataframe(
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/inout")
 async def api_get_inout_count(
     request: Request,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
     return await get_inout_count(request.app.collection, begin, end)
+
+
+@router.get("/people")
+async def api_get_people_count(
+    request: Request,
+    begin: datetime = "2023-12-27T00:00:00.000+00:00",
+    end: datetime = "2023-12-27T23:59:59.999+00:00",
+) -> int:
+    return await get_people_count(request.app.collection, begin, end)
+
+
+@router.get("/dataframe")
+async def api_get_dataframe(
+    request: Request,
+    staffcodes: List[StaffCodeStr] = Body(...),
+    begin: datetime = "2023-12-27T00:00:00.000+00:00",
+    end: datetime = "2023-12-27T23:59:59.999+00:00",
+) -> str:
+    df = await get_dataframe(request.app.collection, staffcodes, begin, end)
+    return df.to_csv(index=False)
