@@ -19,14 +19,14 @@ def test_email_spammer(mocker: MockerFixture):
 
 
 @pytest.fixture
-def spammerwithlove(stmpsettings):
+def spammerwithlove(smtpconfig):
     spammer = EmailSpammer(
-        username=stmpsettings["username"],
-        account=stmpsettings["account"],
-        password=stmpsettings["password"],
-        smtp_server=stmpsettings["server"],
-        smtp_port=stmpsettings["port"],
-        useSSL=stmpsettings["useSSL"],
+        username=smtpconfig["username"],
+        account=smtpconfig["account"],
+        password=smtpconfig["password"],
+        smtp_server=smtpconfig["server"],
+        smtp_port=smtpconfig["port"],
+        useSSL=smtpconfig["useSSL"],
     )
     yield spammer
 

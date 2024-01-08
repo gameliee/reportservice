@@ -56,7 +56,7 @@ def dburi(request):
 
 
 @pytest.fixture(scope="session")
-def collectionsetttings(request):
+def collectionconfig(request):
     return {
         "staff_collection": "BodyFaceName",
         "face_collection": "staff",
@@ -64,7 +64,7 @@ def collectionsetttings(request):
 
 
 @pytest.fixture(scope="session")
-def stmpsettings(request):
+def smtpconfig(request):
     """A example email settings that actually works"""
     if request.config.getoption("--createdb"):
         return {
