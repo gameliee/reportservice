@@ -1,16 +1,25 @@
+import pytest
 from fastapi.testclient import TestClient
 
 
-def test_healthcheck(testclient: TestClient):
+@pytest.mark.asyncio
+async def test_healthcheck(testclient: TestClient):
     response = testclient.get("/")
     assert response.status_code == 200
 
 
-def test_version(testclient: TestClient):
+@pytest.mark.asyncio
+async def test_version(testclient: TestClient):
     response = testclient.get("/version")
     assert response.status_code == 200
 
 
-def test_connection_status(testclient: TestClient):
+@pytest.mark.asyncio
+async def test_connection_status(testclient: TestClient):
     response = testclient.get("/connection-status")
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_connection_status2(testclient: TestClient):
+    await testclient.app.mongodb_client.server_info()
