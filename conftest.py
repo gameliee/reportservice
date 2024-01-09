@@ -59,8 +59,8 @@ def dburi(request):
 @pytest.fixture(scope="session")
 def collectionconfig(request):
     return {
-        "staff_collection": "BodyFaceName",
-        "face_collection": "staff",
+        "staff_collection": "staffs",
+        "face_collection": "BodyFaceName",
     }
 
 

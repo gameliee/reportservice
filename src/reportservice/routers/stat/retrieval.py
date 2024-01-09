@@ -1,22 +1,30 @@
 from typing import List
 from datetime import datetime, timezone
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
 import pandas as pd
 from .models import StaffCodeStr
+from .queries import pipeline_staffs_inou, pipeline_count
+from ..config.router import get_settings
 
 
 async def get_people_count(
-    collecttion: AsyncIOMotorCollection,
+    db: AsyncIOMotorDatabase,
+    staff_collection: str,
+    bodyfacename_collection: str,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
     """count all people in the database"""
-    raise NotImplementedError
+    staff_collection: AsyncIOMotorCollection = db[staff_collection]
+    count = await staff_collection.distinct("staff_code")
+    return len(count)
 
 
 async def get_inout_count(
-    collecttion: AsyncIOMotorCollection,
+    db: AsyncIOMotorDatabase,
+    staff_collection: str,
+    bodyfacename_collection: str,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
@@ -24,23 +32,10 @@ async def get_inout_count(
         begin = datetime.fromisoformat(begin)
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
-    pipeline = [
-        {
-            "$match": {
-                "image_time": {
-                    "$gte": begin,
-                    "$lte": end,
-                },
-                "face_reg_score": {"$gte": 0.63},
-                "has_mask": False,
-            }
-        },
-        {"$group": {"_id": "$staff_id"}},
-        {"$group": {"_id": None, "count": {"$sum": 1}}},
-        {"$project": {"_id": 0, "count": 1}},
-    ]
+    pipeline = pipeline_count(begin, end, 0.63)
     # Execute the pipeline
-    cursor = collecttion.aggregate(pipeline)
+    bodyfacename_collection: AsyncIOMotorCollection = db[bodyfacename_collection]
+    cursor = bodyfacename_collection.aggregate(pipeline)
     result = await cursor.to_list(length=1)
 
     print(pipeline)
@@ -53,7 +48,9 @@ async def get_inout_count(
 
 
 async def get_dataframe(
-    collection: AsyncIOMotorCollection,
+    db: AsyncIOMotorDatabase,
+    staff_collection: str,
+    bodyfacename_collection: str,
     staffcodes: List[StaffCodeStr],
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
@@ -86,25 +83,19 @@ async def get_dataframe(
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
 
-    pipeline = [
-        {
-            "$match": {
-                "image_time": {"$gte": begin, "$lte": end},
-                "face_reg_score": {"$gte": 0.63},
-                "has_mask": False,
-                "staff_id": {"$in": staffcodes},
-            }
-        },
-        {"$project": {"staff_id": 1, "image_time": 1}},
-        {"$sort": {"image_time": 1}},
-        {"$group": {"_id": "$staff_id", "first": {"$first": "$image_time"}, "last": {"$last": "$image_time"}}},
-    ]
-
-    cursor = collection.aggregate(pipeline)
+    print("begin", begin)
+    print("end", end)
+    print("staffcodse", staffcodes)
+    pipeline = pipeline_staffs_inou(
+        staffcodes, begin, end, threshold=0.0, bodyfacename_collection=bodyfacename_collection
+    )
+    print("pipeline", pipeline)
+    staff_collection: AsyncIOMotorCollection = db[staff_collection]
+    cursor = staff_collection.aggregate(pipeline)
     query_result = await cursor.to_list(length=None)
     df = pd.DataFrame(query_result)  # noqa: F841
-
-    raise NotImplementedError
+    print(df)
+    return df
 
 
 router = APIRouter()
@@ -135,5 +126,13 @@ async def api_get_dataframe(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> str:
-    df = await get_dataframe(request.app.collection, staffcodes, begin, end)
+    app_config = await get_settings(request.app.config, request.app.mongodb)
+    df = await get_dataframe(
+        db=request.app.mongodb,
+        staff_collection=app_config.faceiddb.staff_collection,
+        bodyfacename_collection=app_config.faceiddb.face_collection,
+        staffcodes=staffcodes,
+        begin=begin,
+        end=end,
+    )
     return df.to_csv(index=False)

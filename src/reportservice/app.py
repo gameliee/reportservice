@@ -23,12 +23,17 @@ async def log_everythings(request: Request):
         logger.info(f"Received request: {request.method} {request.url}")
 
 
+async def init_configurations(app: FastAPI):
+    """init the configurations"""
+    app.logger.info("Loading configurations...")
+    app.config = settings
+
+
 async def init_database(app: FastAPI):
     """init the database connection"""
     app.logger.info("Connecting to database...")
     app.mongodb_client = AsyncIOMotorClient(settings.DB_URL, uuidRepresentation="standard")
     app.mongodb: AsyncIOMotorDatabase = app.mongodb_client[settings.DB_NAME]
-    app.collection: AsyncIOMotorCollection = app.mongodb[settings.DB_COLLECTION_REPORT]
 
 
 async def close_database(app: FastAPI):
@@ -41,6 +46,7 @@ async def close_database(app: FastAPI):
 async def lifespan(app: FastAPI):
     """manage the database connection, the scheduler using lifespan"""
     app.logger = logging.getLogger(settings.APP_NAME)
+    await init_configurations(app)
     await init_database(app)
     yield
     await close_database(app)

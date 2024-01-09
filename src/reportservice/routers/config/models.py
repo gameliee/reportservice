@@ -16,8 +16,8 @@ class FaceIDDBSettingsModel(BaseSettings):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "staff_collection": "BodyFaceName",
-                "face_collection": "staff",
+                "staff_collection": "staffs",
+                "face_collection": "BodyFaceName",
             }
         }
     )
@@ -54,7 +54,7 @@ class SmtpSettingsModel(BaseSettings):
                 "password": "",
                 "server": "localhost",
                 "port": 1026,
-                "useSSL": True,
+                "useSSL": False,
             }
         }
     )

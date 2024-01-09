@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from .models import AppSettingsModel, AppSettingsModelUpdate
 from .email_spammer import EmailSpammer
-from ...settings import settings as globalsettings
 
 router = APIRouter()
 
@@ -31,7 +31,7 @@ async def validate_settings(setting: AppSettingsModel) -> bool:
 
 @router.post("/", response_description="Create Settings", response_model=AppSettingsModel)
 async def create_settings(request: Request, setting: AppSettingsModel = Body(...)):
-    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
+    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
     latest = await request.app.mongodb[COLNAME].find_one()
     if latest is not None:
         raise HTTPException(status_code=303, detail="already have settings, please use PUT or DELETE")
@@ -45,19 +45,24 @@ async def create_settings(request: Request, setting: AppSettingsModel = Body(...
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_setting)
 
 
-@router.get("/", response_description="Get Settings", response_model=AppSettingsModel)
-async def get_settings(request: Request):
-    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
-    latest = await request.app.mongodb[COLNAME].find_one()
+async def get_settings(config: AppSettingsModel, db: AsyncIOMotorDatabase) -> AppSettingsModel:
+    collection = db[config.DB_COLLECTION_SETTINGS]
+    latest = await collection.find_one()
     if not latest:
         raise HTTPException(status_code=404, detail="No settings found")
     latest.pop("_id")
-    return latest
+    return AppSettingsModel.model_validate(latest)
+
+
+@router.get("/", response_description="Get Settings", response_model=AppSettingsModel)
+async def api_get_settings(request: Request):
+    latest = await get_settings(request.app.config, request.app.mongodb)
+    return latest.model_dump()
 
 
 @router.put("/", response_description="Update settings", response_model=AppSettingsModel)
 async def update_settings(request: Request, setting: AppSettingsModelUpdate = Body(...)):
-    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
+    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
     latest = await request.app.mongodb[COLNAME].find_one()
     if not latest:
         raise HTTPException(status_code=404, detail="No settings found")
@@ -87,7 +92,7 @@ async def update_settings(request: Request, setting: AppSettingsModelUpdate = Bo
 
 @router.delete("/", response_description="Delete settings")
 async def delete_settings(request: Request):
-    COLNAME = globalsettings.DB_COLLECTION_SETTINGS
+    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
     settings = await request.app.mongodb[COLNAME].find_one()
     if not settings:
         raise HTTPException(status_code=404, detail="No settings found")
