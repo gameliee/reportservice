@@ -6,21 +6,18 @@ from pymongo.collection import Collection
 from pymongo.results import UpdateResult
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from .models import (
-    ContentModelCreate,
-    ContentModel,
-    ContentModelRendered,
-    ContentModelUpdate
-)
+from ...settings import AppSettings
+from ..config.router import get_spammer, get_settings
+from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate
 from .content import render, send
-from ..config.router import get_postgres_db, get_spammer
 
 router = APIRouter()
-COLNAME = COLCONTENT
 
 
 @router.get("/", response_description="Get all contents", response_model=List[ContentModel])
 async def list_contents(request: Request, offset: int = 0, limit: int = 0):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     triggers = []
     for doc in await request.app.mongodb[COLNAME].find().skip(offset).limit(limit).to_list(100):
         triggers.append(doc)
@@ -29,6 +26,8 @@ async def list_contents(request: Request, offset: int = 0, limit: int = 0):
 
 @router.get("/{id}", response_description="Get a content by id", response_model=ContentModel)
 async def get_content(request: Request, id):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     content = await request.app.mongodb[COLNAME].find_one({"_id": id})
     if content is not None:
         return content
@@ -42,6 +41,8 @@ async def get_content(request: Request, id):
     response_model=ContentModel,
 )
 async def create_content(request: Request, content: ContentModelCreate):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     if (existed := await request.app.mongodb[COLNAME].find_one({"_id": content.id})) is not None:
         raise HTTPException(status_code=404, detail=f"Content {existed['_id']} existed")
 
@@ -59,6 +60,8 @@ async def create_content(request: Request, content: ContentModelCreate):
     response_model=bool,
 )
 async def upload_excel(request: Request, id, excelfile: UploadFile = File(...)):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     excel = await excelfile.read()
     # NOTE: check the len, if too large then should not be upload
     max_file_size = 10 * 1024 * 1024  # 10 MB in bytes
@@ -77,6 +80,8 @@ async def upload_excel(request: Request, id, excelfile: UploadFile = File(...)):
 
 @router.get("/{id}/download", description="Download the excel file of the content")
 async def download_excel(request: Request, id):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     content = await request.app.mongodb[COLNAME].find_one({"_id": id})
 
     if content is None:
@@ -98,6 +103,10 @@ async def download_excel(request: Request, id):
 @router.delete("/{id}", response_description="Delete a content")
 async def delete_content(request: Request, id):
     """delete a content which linked with no task. If there are tasks using this content, abort and raise error"""
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
+    COLTASKS = app_setting.DB_COLLECTION_TASK
+
     # is there any tasks with this id?
     task = await request.app.mongodb[COLTASKS].find_one({"content_id": id})
     if task is not None:
@@ -113,6 +122,8 @@ async def delete_content(request: Request, id):
 
 @router.put("/{id}", response_description="Update a content")
 async def update_content(request: Request, id, content: ContentModelUpdate):
+    app_setting: AppSettings = request.app.config
+    COLNAME = app_setting.DB_COLLECTION_CONTENT
     # remove None fields
     content = {k: v for k, v in content.model_dump().items() if v is not None}
 
@@ -138,12 +149,15 @@ async def render_content(request: Request, id: str, render_date: Optional[dateti
     content = await get_content(request=request, id=id)
     content = ContentModel.model_validate(content)
 
-    # on-demaned connection get
-    async with get_postgres_db(request) as db:
-        try:
-            text = await render(db, content, render_date)
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_417_EXPECTATION_FAILED, detail=str(e))
+    app_config = await get_settings(request.app.config, request.app.mongodb)
+
+    text = await render(
+        request.app.mongodb,
+        app_config.faceiddb.staff_collection,
+        app_config.faceiddb.face_collection,
+        content,
+        render_date,
+    )
 
     request.app.logger.info(text, extra={"id": id})
     return text

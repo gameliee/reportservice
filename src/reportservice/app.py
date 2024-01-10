@@ -12,6 +12,7 @@ from . import customlog
 
 from .routers.stat.retrieval import router as stat_router
 from .routers.config.router import router as config_router
+from .routers.content.router import router as content_router
 
 
 # Global dependency
@@ -63,6 +64,7 @@ app.add_middleware(
 
 app.include_router(stat_router, prefix="/stat", tags=["stat"])
 app.include_router(config_router, prefix="/config", tags=["config"])
+app.include_router(content_router, prefix="/content", tags=["content"])
 
 
 @app.get("/")

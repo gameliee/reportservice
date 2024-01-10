@@ -24,6 +24,8 @@ class DatabaseSettings(BaseSettings):
     DB_URL: str
     DB_NAME: str
     DB_COLLECTION_SETTINGS: str
+    DB_COLLECTION_CONTENT: str
+    DB_COLLECTION_TASK: str
 
 
 class AppSettings(CommonSettings, ServerSettings, DatabaseSettings):

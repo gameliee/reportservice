@@ -1,19 +1,9 @@
 from base64 import b64encode, b64decode
 from datetime import datetime
-from jinja2 import Environment, BaseLoader
-from motor.motor_asyncio import AsyncIOMotorCollection
-from ..stat import (
-    get_people_count,
-    get_inout_count,
-    get_has_sample_count,
-    get_total_count
-)
-from ..logics import (
-    fill_excel,
-    excel_to_html,
-
-)
-from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from ..stat import get_people_count, get_inout_count, get_has_sample_count
+from ..excel_helper import extract_and_fill_excel, excel_to_html
+from .models import ContentModel, ContentModelRendered
 from ..config.email_spammer import EmailSpammer
 
 
@@ -27,7 +17,13 @@ def get_weekday_Vn(today):
     return vn_name[today.isoweekday() - 1]
 
 
-async def render(collection: AsyncIOMotorCollection, content: ContentModel, render_date: datetime) -> ContentModelRendered:
+async def render(
+    db: AsyncIOMotorDatabase,
+    staff_collection: str,
+    bodyfacename_collection: str,
+    content: ContentModel,
+    render_date: datetime,
+) -> ContentModelRendered:
     """render the content to a ContentModelRendered"""
     day_begin = datetime.combine(date=render_date.date(), time=datetime.min.time())
     day_end = datetime.combine(date=render_date.date(), time=datetime.max.time())
@@ -45,11 +41,13 @@ async def render(collection: AsyncIOMotorCollection, content: ContentModel, rend
         "sec": render_date.second,
         "weekday_vn": get_weekday_vn(render_date),
         "weekday_Vn": get_weekday_Vn(render_date),
-        "people_count": get_people_count(collection, day_begin, day_end),
-        "has_sample_count": get_has_sample_count(collection, day_begin, day_end),
-        "checkin_count": get_inout_count(collection, in_begin, in_end),
-        "checkout_count": get_inout_count(collection, out_begin, out_end),
-        "total_count": get_inout_count(collection, day_begin, day_end), # BUG: this is not correct, change to begin of the day to end of the day
+        "people_count": get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end),
+        # "has_sample_count": get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
+        "checkin_count": get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end),
+        "checkout_count": get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end),
+        "total_count": get_inout_count(
+            db, staff_collection, bodyfacename_collection, day_begin, day_end
+        ),  # BUG: this is not correct, change to begin of the day to end of the day
         "table": "",
     }
 
@@ -57,7 +55,9 @@ async def render(collection: AsyncIOMotorCollection, content: ContentModel, rend
     excel_bytes = b64decode(str(content.excel).encode("utf-8"))  # noqa: F841
     fill_excel_bytes = None
     if content.is_excel_uploaded():
-        fill_excel_bytes = fill_excel(eng, excelbytes=excel_bytes, begin=begin, end=end)
+        fill_excel_bytes = extract_and_fill_excel(
+            db, staff_collection, bodyfacename_collection, excel_bytes, day_begin, day_end
+        )
         html = excel_to_html(fill_excel_bytes)
         data["table"] = html
 
