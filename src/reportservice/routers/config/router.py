@@ -110,7 +110,7 @@ async def delete_settings(request: Request):
 
 @asynccontextmanager
 async def get_spammer(request: Request):
-    settings = await get_settings(request)
+    settings = await get_settings(request.app.config, request.app.mongodb)
     settings = AppSettingsModel.model_validate(settings)
     smtpsettings = settings.smtp
 

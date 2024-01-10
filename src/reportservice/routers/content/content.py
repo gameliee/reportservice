@@ -41,11 +41,11 @@ async def render(
         "sec": render_date.second,
         "weekday_vn": get_weekday_vn(render_date),
         "weekday_Vn": get_weekday_Vn(render_date),
-        "people_count": get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end),
+        "people_count": await get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end),
         # "has_sample_count": get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
-        "checkin_count": get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end),
-        "checkout_count": get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end),
-        "total_count": get_inout_count(
+        "checkin_count": await get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end),
+        "checkout_count": await get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end),
+        "total_count": await get_inout_count(
             db, staff_collection, bodyfacename_collection, day_begin, day_end
         ),  # BUG: this is not correct, change to begin of the day to end of the day
         "table": "",
@@ -55,7 +55,7 @@ async def render(
     excel_bytes = b64decode(str(content.excel).encode("utf-8"))  # noqa: F841
     fill_excel_bytes = None
     if content.is_excel_uploaded():
-        fill_excel_bytes = extract_and_fill_excel(
+        fill_excel_bytes = await extract_and_fill_excel(
             db, staff_collection, bodyfacename_collection, excel_bytes, day_begin, day_end
         )
         html = excel_to_html(fill_excel_bytes)

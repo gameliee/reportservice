@@ -35,7 +35,7 @@ def testsettings(monkeypatch_session, dburi):
     return settings
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def testclient(dburi):
     with TestClient(app) as client:
         yield client

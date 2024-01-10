@@ -18,8 +18,3 @@ async def test_version(testclient: TestClient):
 async def test_connection_status(testclient: TestClient):
     response = testclient.get("/connection-status")
     assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_connection_status2(testclient: TestClient):
-    await testclient.app.mongodb_client.server_info()

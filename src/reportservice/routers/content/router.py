@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from ...settings import AppSettings
 from ..config.router import get_spammer, get_settings
+from ..excel_helper import read_excel_validate, ExcelInvalidException
 from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate
 from .content import render, send
 
@@ -68,6 +69,11 @@ async def upload_excel(request: Request, id, excelfile: UploadFile = File(...)):
     if len(excel) > max_file_size:
         error_message = f"File size exceeds the maximum limit of {max_file_size} bytes."
         raise HTTPException(status_code=413, detail=error_message)
+
+    try:
+        read_excel_validate(excel)
+    except ExcelInvalidException as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     base64_str = b64encode(excel).decode("utf-8")
     result = await request.app.mongodb[COLNAME].update_one({"_id": id}, {"$set": {"excel": base64_str}})

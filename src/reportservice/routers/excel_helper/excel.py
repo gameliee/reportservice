@@ -45,7 +45,7 @@ def read_excel_validate(excel_bytes: bytes) -> pd.DataFrame | None:
 
     # only care about defined columns
     if AppConst.ESTAFF not in df.columns:
-        raise ExcelInvalidException(f"in excel file, column {AppConst.ESTAFF} not found")
+        raise ExcelInvalidException(f'in excel file, column "{AppConst.ESTAFF}" not found')
 
     return df
 

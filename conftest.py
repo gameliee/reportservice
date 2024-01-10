@@ -2,6 +2,7 @@ import os
 import random
 import string
 import pytest
+import uuid
 from datetime import datetime
 
 
@@ -110,7 +111,31 @@ def random_collection_name(dburi):
 
 
 @pytest.fixture
-def test_time():
-    begin = datetime.fromisoformat("2023-12-27T00:00:00.000+00:00")
-    end = datetime.fromisoformat("2023-12-27T23:59:59.999+00:00")
-    return begin, end
+def renderdate():
+    """only date part is interested"""
+    return datetime.fromisoformat("2023-12-27T00:00:00.000+00:00")
+
+
+@pytest.fixture
+def test_time(renderdate: datetime):
+    day_begin = datetime.combine(date=renderdate.date(), time=datetime.min.time())
+    day_end = datetime.combine(date=renderdate.date(), time=datetime.max.time())
+    return day_begin, day_end
+
+
+@pytest.fixture(scope="session")
+def testcontentid(testclient) -> str:
+    testid = "test_" + str(uuid.uuid1())
+    yield testid
+
+
+@pytest.fixture(scope="session")
+def invalidexcelfile(pytestconfig):
+    path = os.path.join(str(pytestconfig.rootdir), "tests", "invalid.xlsx")
+    return path
+
+
+@pytest.fixture(scope="session")
+def invalidexcelbytes(invalidexcelfile):
+    with open(invalidexcelfile, "rb") as f:
+        yield f.read()
