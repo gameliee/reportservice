@@ -1,6 +1,6 @@
 from typing import List
 from datetime import datetime
-from .models import StaffCodeStr
+from .models import StaffCodeStr, DFConst
 
 
 def pipeline_staffs_inou(
@@ -44,15 +44,16 @@ def pipeline_staffs_inou(
         {"$unwind": {"path": "$found", "includeArrayIndex": "string", "preserveNullAndEmptyArrays": True}},
         {
             "$project": {
-                "staff_code": 1,
+                "_id": 0,
+                str(DFConst.STAFF): "$staff_code",
                 "full_name": 1,
                 "email": 1,
                 "unit": 1,
                 "department": 1,
                 "title": 1,
-                "state": 1,
-                "min_detection_time": "$found.firstDocument",
-                "max_detection_time": "$found.lastDocument",
+                str(DFConst.SAMPL): "$state",
+                str(DFConst.FIRST): "$found.firstDocument",
+                str(DFConst.LASTT): "$found.lastDocument",
             }
         },
     ]

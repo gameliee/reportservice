@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
 import pandas as pd
-from .models import StaffCodeStr
+from .models import StaffCodeStr, DFConst, QueryException
 from .queries import pipeline_staffs_inou, pipeline_count
 from ..config.router import get_settings
 
@@ -37,9 +37,6 @@ async def get_inout_count(
     bodyfacename_collection: AsyncIOMotorCollection = db[bodyfacename_collection]
     cursor = bodyfacename_collection.aggregate(pipeline)
     result = await cursor.to_list(length=1)
-
-    print(pipeline)
-    print(result)
 
     if not result:
         return 0
@@ -82,19 +79,42 @@ async def get_dataframe(
         begin = datetime.fromisoformat(begin)
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
+    if not isinstance(staffcodes, List):
+        df = pd.DataFrame(columns=[DFConst.STAFF, DFConst.FIRST, DFConst.LASTT, DFConst.SAMPL])
+        return df
 
-    print("begin", begin)
-    print("end", end)
-    print("staffcodse", staffcodes)
     pipeline = pipeline_staffs_inou(
         staffcodes, begin, end, threshold=0.0, bodyfacename_collection=bodyfacename_collection
     )
-    print("pipeline", pipeline)
     staff_collection: AsyncIOMotorCollection = db[staff_collection]
     cursor = staff_collection.aggregate(pipeline)
     query_result = await cursor.to_list(length=None)
+    if len(query_result) == 0:
+        df = pd.DataFrame(columns=[DFConst.STAFF, DFConst.FIRST, DFConst.LASTT, DFConst.SAMPL])
+        return df
     df = pd.DataFrame(query_result)  # noqa: F841
-    print(df)
+
+    if DFConst.STAFF not in df.columns:
+        raise QueryException(
+            f'in query result, field "{DFConst.STAFF}" not found. Please check the schemas in mongo database'
+        )
+
+    if DFConst.FIRST not in df.columns:
+        raise QueryException(
+            f'in query result, field "{DFConst.FIRST}" not found. Please check the schemas in mongo database'
+        )
+
+    if DFConst.LASTT not in df.columns:
+        raise QueryException(
+            f'in query result, field "{DFConst.LASTT}" not found. Please check the schemas in mongo database'
+        )
+
+    if DFConst.SAMPL not in df.columns:
+        raise QueryException(
+            f'in query result, field "{DFConst.SAMPL}" not found. Please check the schemas in mongo database'
+        )
+
+    # TODO: make sure the dataframe has the AppCost.ESTAFF columns
     return df
 
 

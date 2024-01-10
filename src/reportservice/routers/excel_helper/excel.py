@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .models import AppConst, ExcelInvalidException
 from ..stat import get_dataframe
@@ -100,7 +100,12 @@ def excel_to_html(excelbytes: bytes) -> str:
 
 
 async def extract_and_fill_excel(
-    collection: AsyncIOMotorCollection, excelbytes: bytes, begin: datetime, end: datetime
+    db: AsyncIOMotorDatabase,
+    staff_collection: str,
+    bodyfacename_collection: str,
+    excelbytes: bytes,
+    begin: datetime,
+    end: datetime,
 ) -> bytes:
     """given an excel file, fill it with data from database. Only following columns will be filled:
     - staffcode
@@ -109,7 +114,9 @@ async def extract_and_fill_excel(
     - has_sample
 
     Args:
-        pg (Engine): database connection
+        db (AsyncIOMotorDatabase): database
+        staff_collection (str): collection name of staffs
+        bodyfacename_collection (str): collection name of BodyFaceName
         excelbytes (bytes): bytestream of the excel file. Can be provide as
         ```
         with open('example.xlsx', 'rb') as f:
@@ -124,7 +131,7 @@ async def extract_and_fill_excel(
     origin_df = read_excel_validate(excelbytes)
     staffcodes = origin_df[AppConst.ESTAFF].dropna().to_list()
 
-    result_df = await get_dataframe(collection, staffcodes, begin, end)
+    result_df = await get_dataframe(db, staff_collection, bodyfacename_collection, staffcodes, begin, end)
 
     # Update the null elements from result_df into origin_df
     result_df = result_df.merge(
