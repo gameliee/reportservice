@@ -12,7 +12,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ...settings import AppSettings
 from ..content.router import get_content
-from .models import TaskModelCreate, TaskModel, TaskModelUpdate, ContentModel, JobModel
+from .models import TaskModelCreate, TaskModelView, TaskModelUpdate, ContentModel, JobModel
 from .task import render_and_send_today
 
 
@@ -35,7 +35,7 @@ async def remove_orphan_jobs(request: Request):
 router = APIRouter(dependencies=[Depends(remove_orphan_jobs)])
 
 
-@router.post("/", response_description="Add new task", response_model=TaskModel)
+@router.post("/", response_description="Add new task", response_model=TaskModelView)
 async def create_task(request: Request, task: TaskModelCreate = Body(...)):
     app_setting: AppSettings = request.app.config
     colname = app_setting.DB_COLLECTION_TASK
@@ -70,7 +70,7 @@ async def create_task(request: Request, task: TaskModelCreate = Body(...)):
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_task)
 
 
-@router.get("/", response_description="Get all tasks", response_model=List[TaskModel])
+@router.get("/", response_description="Get all tasks", response_model=List[TaskModelView])
 async def list_tasks(request: Request, offset: int = 0, limit: int = 0):
     app_setting: AppSettings = request.app.config
     colname = app_setting.DB_COLLECTION_TASK
@@ -86,12 +86,12 @@ async def list_tasks(request: Request, offset: int = 0, limit: int = 0):
         content = await get_content(request, id=atask["content_id"])
         if content is None:
             raise HTTPException(status_code=404, detail=f"In task {id}, Content {atask['content_id']} not found")
-        task = TaskModel(job=JobModel.parse_job(job), content=content, **atask)
+        task = TaskModelView(job=JobModel.parse_job(job), content=content, **atask)
         tasks.append(task)
     return tasks
 
 
-@router.get("/{id}", response_description="Get task with id", response_model=TaskModel)
+@router.get("/{id}", response_description="Get task with id", response_model=TaskModelView)
 async def read_task(request: Request, id):
     app_setting: AppSettings = request.app.config
     colname = app_setting.DB_COLLECTION_TASK
@@ -107,7 +107,7 @@ async def read_task(request: Request, id):
     content = await get_content(request, task["content_id"])
     if content is None:
         raise HTTPException(status_code=404, detail=f"In task {id}, Content {task['content_id']} not found")
-    task = TaskModel(job=JobModel.parse_job(job), content=content, **task)
+    task = TaskModelView(job=JobModel.parse_job(job), content=content, **task)
     return task
 
 
@@ -140,7 +140,7 @@ async def pause_task(request: Request, id):
     scheduler: AsyncIOScheduler = request.app.scheduler
 
     task = await read_task(request, id)
-    task = TaskModel.model_validate(task)
+    task = TaskModelView.model_validate(task)
 
     job: Job = scheduler.get_job(task.job_id)
     job.pause()
@@ -160,7 +160,7 @@ async def resume_task(request: Request, id):
     scheduler: AsyncIOScheduler = request.app.scheduler
 
     task = await read_task(request, id)
-    task = TaskModel.model_validate(task)
+    task = TaskModelView.model_validate(task)
 
     job: Job = scheduler.get_job(task.job_id)
     job.resume()
@@ -172,7 +172,7 @@ async def resume_task(request: Request, id):
     return await read_task(request, id)
 
 
-@router.put("/{id}", response_description="Update a task", response_model=TaskModel)
+@router.put("/{id}", response_description="Update a task", response_model=TaskModelView)
 async def update_task(request: Request, id, task: TaskModelUpdate):
     app_setting: AppSettings = request.app.config
     colname = app_setting.DB_COLLECTION_TASK
@@ -180,7 +180,7 @@ async def update_task(request: Request, id, task: TaskModelUpdate):
     scheduler: AsyncIOScheduler = request.app.scheduler
 
     old = await read_task(request, id)
-    old = TaskModel.model_validate(old)
+    old = TaskModelView.model_validate(old)
 
     if task.trigger is not None and task.trigger != old.trigger:
         try:
