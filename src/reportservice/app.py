@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from apscheduler.jobstores.mongodb import MongoDBJobStore
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from .settings import settings
 from . import customlog
@@ -13,6 +15,7 @@ from . import customlog
 from .routers.stat.retrieval import router as stat_router
 from .routers.config.router import router as config_router
 from .routers.content.router import router as content_router
+from .routers.task.router import router as task_router
 
 
 # Global dependency
@@ -43,14 +46,38 @@ async def close_database(app: FastAPI):
     app.mongodb_client.close()
 
 
+async def init_scheduler(app: FastAPI):
+    """init scheduler instance"""
+    jobstores = {
+        "default": MongoDBJobStore(
+            database=settings.DB_NAME, collection=settings.DB_COLLECTION_SCHEDULER, host=settings.DB_URL
+        ),
+    }
+    job_defaults = {
+        "coalesce": True,  # whether to only run the job once when several run times are due
+        "max_instances": 10,
+    }
+
+    app.scheduler = AsyncIOScheduler(jobstores=jobstores, job_defaults=job_defaults)
+    app.scheduler.start()
+
+
+async def close_scheduler(app: FastAPI):
+    """close the scheduler"""
+    app.scheduler: AsyncIOScheduler
+    app.scheduler.shutdown()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """manage the database connection, the scheduler using lifespan"""
     app.logger = logging.getLogger(settings.APP_NAME)
     await init_configurations(app)
     await init_database(app)
+    await init_scheduler(app)
     yield
     await close_database(app)
+    await close_scheduler(app)
 
 
 app = FastAPI(lifespan=lifespan, dependencies=[Depends(log_everythings)])
@@ -65,6 +92,7 @@ app.add_middleware(
 app.include_router(stat_router, prefix="/stat", tags=["stat"])
 app.include_router(config_router, prefix="/config", tags=["config"])
 app.include_router(content_router, prefix="/content", tags=["content"])
+app.include_router(task_router, prefix="/task", tags=["task"])
 
 
 @app.get("/")

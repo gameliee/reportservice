@@ -10,6 +10,7 @@ DB_NAME = "FaceID"
 DB_COLLECTION_SETTINGS = "ReportConfigurations"
 DB_COLLECTION_CONTENT = "ReportContent"
 DB_COLLECTION_TASK = "ReportTask"
+DB_COLLECTION_SCHEDULER = "ReportScheduler"
 
 
 [production]

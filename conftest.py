@@ -139,3 +139,9 @@ def invalidexcelfile(pytestconfig):
 def invalidexcelbytes(invalidexcelfile):
     with open(invalidexcelfile, "rb") as f:
         yield f.read()
+
+
+@pytest.fixture(scope="session")
+def testtaskid(testclient) -> str:  # noqa: F811
+    testid = "test_" + str(uuid.uuid1())
+    yield testid

@@ -26,6 +26,7 @@ class DatabaseSettings(BaseSettings):
     DB_COLLECTION_SETTINGS: str
     DB_COLLECTION_CONTENT: str
     DB_COLLECTION_TASK: str
+    DB_COLLECTION_SCHEDULER: str
 
 
 class AppSettings(CommonSettings, ServerSettings, DatabaseSettings):

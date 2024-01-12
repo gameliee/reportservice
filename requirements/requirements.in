@@ -10,3 +10,4 @@ psutil # for monitor threads
 motor # for mongo database connect
 pandas # for forming the reports
 openpyxl # for handling excel files
+apscheduler # Scheduler tasks
