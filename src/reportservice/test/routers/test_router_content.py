@@ -26,10 +26,15 @@ def createtestcontent(testclient, testcontentid) -> str:
             "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
         }
     )
-    response = testclient.post(f"{PREFIX}/", data=payload)
-    assert response.status_code == 201
+    if created[0] is False:
+        response = testclient.post(f"{PREFIX}/", data=payload)
+        assert response.status_code == 201
+        created[0] = True
     yield testcontentid
-    testclient.delete(f"{PREFIX}/{testcontentid}")
+    if created[0] is True:
+        response = testclient.delete(f"{PREFIX}/{testcontentid}")
+        assert response.status_code == 200
+        created[0] = False
 
 
 def test_list_contents(testclient: TestClient):
@@ -116,6 +121,20 @@ def test_download_excel2(testclient: TestClient, createtestcontent: str):
 def test_update_content(testclient: TestClient, createtestcontent: str):
     payload = json.dumps({"description": "change the description to this informative one"})
     response = testclient.put(f"{PREFIX}/{createtestcontent}", data=payload)
+    assert response.status_code == 200
+
+
+def test_query_content(
+    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+):
+    response = testclient.get(f"{PREFIX}/{createtestcontent}/query", params={"query_date": renderdate})
+    assert response.status_code == 200
+
+
+def test_query_content_now(
+    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+):
+    response = testclient.get(f"{PREFIX}/{createtestcontent}/query")
     assert response.status_code == 200
 
 

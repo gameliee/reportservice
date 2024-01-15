@@ -22,18 +22,18 @@ def test_cron_trigger_model():
     exclude_dates = [datetime(2022, 2, 14), datetime(2022, 4, 1)]
 
     trigger = CronTriggerModel(
-        jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_date=exclude_dates
+        jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_dates=exclude_dates
     )
     assert trigger is not None
     assert trigger.type == TriggerModelType.CRON
 
     with pytest.raises(ValueError):
         CronTriggerModel(
-            type="abc", jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_date=exclude_dates
+            type="abc", jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_dates=exclude_dates
         )
 
     with pytest.raises(ValueError):
-        CronTriggerModel(jitter=5, cron=cron, start_date=end_date, end_date=start_date, exclude_date=exclude_dates)
+        CronTriggerModel(jitter=5, cron=cron, start_date=end_date, end_date=start_date, exclude_dates=exclude_dates)
 
     CronTriggerModel(cron=cron)
 
@@ -69,7 +69,7 @@ def goodtrigger():
     start_date = datetime(2022, 1, 1)
     end_date = datetime(2022, 12, 31)
     exclude_dates = [datetime(2022, 2, 14), datetime(2022, 4, 1)]
-    return CronTriggerModel(jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_date=exclude_dates)
+    return CronTriggerModel(jitter=5, cron=cron, start_date=start_date, end_date=end_date, exclude_dates=exclude_dates)
 
 
 def test_task_model_base(goodtrigger):
@@ -109,7 +109,7 @@ def test_task_model_update():
             "cron": "0 0 * * *",
             "start_date": "2022-01-01T00:00:00",
             "end_date": "2022-12-31T00:00:00",
-            "exclude_date": ["2022-02-14T00:00:00", "2022-04-01T00:00:00"],
+            "exclude_dates": ["2022-02-14T00:00:00", "2022-04-01T00:00:00"],
         },
     }
 
@@ -124,7 +124,7 @@ def test_task_model_update():
     assert task_update.trigger.cron == "0 0 * * *"
     assert task_update.trigger.start_date == datetime(2022, 1, 1)
     assert task_update.trigger.end_date == datetime(2022, 12, 31)
-    assert task_update.trigger.exclude_date == [datetime(2022, 2, 14), datetime(2022, 4, 1)]
+    assert task_update.trigger.exclude_dates == [datetime(2022, 2, 14), datetime(2022, 4, 1)]
 
 
 def test_task_model_create_cron():

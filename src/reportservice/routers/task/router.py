@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.date import DateTrigger
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -12,8 +14,17 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ...settings import AppSettings
 from ..content.router import get_content
-from .models import TaskModelCreate, TaskModelView, TaskModelUpdate, ContentModel, JobModel
 from .task import render_and_send_today
+from .models import (
+    TaskModelCreate,
+    TaskModelView,
+    TaskModelUpdate,
+    ContentModel,
+    JobModel,
+    CronTriggerModel,
+    IntervalTriggerModel,
+    DateTriggerModel,
+)
 
 
 async def remove_orphan_jobs(request: Request):
@@ -43,10 +54,23 @@ async def create_task(request: Request, task: TaskModelCreate = Body(...)):
     scheduler: AsyncIOScheduler = request.app.scheduler
 
     # schedule the task
-    try:
-        cron = CronTrigger.from_crontab(task.trigger)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+    # FIXME: handle exclude_dates
+    if task.trigger.type == "cron":
+        try:
+            _trigger: CronTriggerModel = task.trigger
+            trigger = CronTrigger.from_crontab(_trigger.cron)
+            trigger.start_date = _trigger.start_date
+            trigger.end_date = _trigger.end_date
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+    elif task.trigger.type == "interval":
+        _trigger: IntervalTriggerModel = task.trigger
+        trigger = IntervalTrigger(seconds=_trigger.interval, start_date=_trigger.start_time)
+    elif task.trigger.type == "date":
+        _trigger: DateTriggerModel = task.trigger
+        trigger = DateTrigger(run_date=_trigger.run_date)
+    else:
+        raise HTTPException(status_code=422, detail=f"trigger type {task.trigger.type} not supported")
 
     content = await get_content(request, id=task.content_id)
     content = ContentModel.model_validate(content)
@@ -55,14 +79,10 @@ async def create_task(request: Request, task: TaskModelCreate = Body(...)):
     task.enable = False
 
     jobid = str(task.job_id)
-    try:
-        job: Job = scheduler.add_job(render_and_send_today, cron, [content.id, app_setting], id=jobid)
-        assert not job.pending
-        job.pause()
-    except Exception as e:
-        raise e
-        # revert
-        raise HTTPException(500, detail=f"cannot add job: {e}")
+
+    job: Job = scheduler.add_job(render_and_send_today, trigger, [content.id, app_setting], id=jobid)
+    assert not job.pending
+    job.pause()  # always pause after create
 
     task_serilzed = jsonable_encoder(task)
     new_task = await collection.insert_one(task_serilzed)
@@ -182,13 +202,28 @@ async def update_task(request: Request, id, task: TaskModelUpdate):
     old = await read_task(request, id)
     old = TaskModelView.model_validate(old)
 
+    # schedule the task
+    # FIXME: handle exclude_dates
     if task.trigger is not None and task.trigger != old.trigger:
-        try:
-            cron = CronTrigger.from_crontab(task.trigger)
-        except ValueError as e:
-            raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+        if task.trigger.type == "cron":
+            try:
+                _trigger: CronTriggerModel = task.trigger
+                trigger = CronTrigger.from_crontab(_trigger.cron)
+                trigger.start_date = _trigger.start_date
+                trigger.end_date = _trigger.end_date
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+        elif task.trigger.type == "interval":
+            _trigger: IntervalTriggerModel = task.trigger
+            trigger = IntervalTrigger(seconds=_trigger.interval, start_date=_trigger.start_time)
+        elif task.trigger.type == "date":
+            _trigger: DateTriggerModel = task.trigger
+            trigger = DateTrigger(run_date=_trigger.run_date)
+        else:
+            raise HTTPException(status_code=422, detail=f"trigger type {task.trigger.type} not supported")
+
         job: Job = scheduler.get_job(old.job_id)
-        job.reschedule(cron)
+        job.reschedule(trigger)
         await pause_task(request, id)
 
     task = task.model_dump(exclude_none=True)

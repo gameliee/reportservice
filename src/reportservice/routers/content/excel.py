@@ -1,13 +1,15 @@
 """read, valid excel files"""
 from io import BytesIO
+from typing import List
 import pandas as pd
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from .models import AppConst, ExcelInvalidException
-from ..stat import get_dataframe
+from ..stat import get_people_inout
+from ..stat import PersonInout
+from .models import ExcelColumn, ExcelInvalidException
 
 
 def read_excel_validate(excel_bytes: bytes) -> pd.DataFrame | None:
@@ -41,11 +43,11 @@ def read_excel_validate(excel_bytes: bytes) -> pd.DataFrame | None:
     except Exception as e:  # noqa: F841
         # TODO: log the error here
         print("could not read excel file stored")
-        df = pd.DataFrame(columns=[AppConst.ESTAFF])
+        df = pd.DataFrame(columns=[ExcelColumn.ESTAFF])
 
     # only care about defined columns
-    if AppConst.ESTAFF not in df.columns:
-        raise ExcelInvalidException(f'in excel file, column "{AppConst.ESTAFF}" not found')
+    if ExcelColumn.ESTAFF not in df.columns:
+        raise ExcelInvalidException(f'in excel file, column "{ExcelColumn.ESTAFF}" not found')
 
     return df
 
@@ -99,43 +101,47 @@ def excel_to_html(excelbytes: bytes) -> str:
     return df.fillna("").to_html(index=False)
 
 
-async def extract_and_fill_excel(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+def fill_personinout_to_excel(
+    people_inout: List[PersonInout],
     excelbytes: bytes,
-    begin: datetime,
-    end: datetime,
 ) -> bytes:
-    """given an excel file, fill it with data from database. Only following columns will be filled:
+    """Fill excel file with PersonInout
+    In the excel file, only following columns will be filled:
     - staffcode
     - first recognition time
     - last recognition time
     - has_sample
 
     Args:
-        db (AsyncIOMotorDatabase): database
-        staff_collection (str): collection name of staffs
-        bodyfacename_collection (str): collection name of BodyFaceName
+        people_inout (List[PersonInout]): the data to fill into excel file
         excelbytes (bytes): bytestream of the excel file. Can be provide as
         ```
         with open('example.xlsx', 'rb') as f:
             excel_bytes = f.read()
         ```
-        begin (datetime): begin of the query window
-        end (datetime): end of the query window
 
     Returns:
         bytes: result excel file as bytestream
     """
     origin_df = read_excel_validate(excelbytes)
-    staffcodes = origin_df[AppConst.ESTAFF].dropna().to_list()
 
-    result_df = await get_dataframe(db, staff_collection, bodyfacename_collection, staffcodes, begin, end)
+    if len(people_inout) == 0:
+        return excelbytes
+
+    result_df = pd.DataFrame(people_inout)
+    # TODO: ensure column name
+    result_df.rename(
+        columns={
+            "staff_code": ExcelColumn.ESTAFF,
+            "first_record": ExcelColumn.EFIRST,
+            "last_record": ExcelColumn.ELASTT,
+            "state": ExcelColumn.ESAMPL,
+        }
+    )
 
     # Update the null elements from result_df into origin_df
     result_df = result_df.merge(
-        origin_df[AppConst.ESTAFF], left_on=AppConst.ESTAFF, right_on=AppConst.ESTAFF, how="right"
+        origin_df[ExcelColumn.ESTAFF], left_on=ExcelColumn.ESTAFF, right_on=ExcelColumn.ESTAFF, how="right"
     )  # keep result_df and origin_df same index
     origin_columns = origin_df.columns  # keep columns order
     df = origin_df.combine_first(result_df)  # where magics happen

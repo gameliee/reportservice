@@ -10,6 +10,9 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 from jinja2 import Environment, BaseLoader, Template
 from jinja2.exceptions import TemplateSyntaxError
+from ..stat import PersonInout
+
+StaffCodeStr = Annotated[str, "staff code"]
 
 
 def validate_jinja(v: str) -> str:
@@ -42,6 +45,7 @@ class ContentModelBase(BaseModel):
     checkin_duration: timedelta = Field("PT3H", description="ISO 8601 format for timedelta")
     checkout_begin: datetime = Field(description="only the time part is interested, not the date part")
     checkout_duration: timedelta = Field("PT3H", description="ISO 8601 format for timedelta")
+    staff_codes: List[str] = Field([], description="staff codes to be included in the report")
 
     def get_subject_template(self) -> Template:
         return Environment(loader=BaseLoader).from_string(self.subject_template)
@@ -103,6 +107,15 @@ class ContentModelUpdate(BaseModel):
     )
 
 
+class ContentQueryResult(BaseModel):
+    query_time: datetime
+    people_count: int
+    checkin_count: int
+    checkout_count: int
+    total_count: int
+    people_inout: List[PersonInout]
+
+
 class ContentModelRendered(BaseModel):
     to: str
     cc: str
@@ -111,3 +124,14 @@ class ContentModelRendered(BaseModel):
     body: str
     attach: Optional[str] = Field(None, description="excel file in base64 string")
     attach_name: Optional[str] = Field(None, description="name of the attached excel file")
+
+
+class ExcelColumn:
+    ESTAFF = "mã nhân viên"
+    EFIRST = "ghi nhận lần đầu"
+    ELASTT = "ghi nhận lần cuối"
+    ESAMPL = "trạng thái mẫu"
+
+
+class ExcelInvalidException(Exception):
+    pass

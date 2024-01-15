@@ -4,7 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
 import pandas as pd
 from ..config.router import get_settings
-from .models import StaffCodeStr, DFConst, QueryException
+from .models import StaffCodeStr, QueryException, PersonInout
 from .queries import pipeline_staffs_inou, pipeline_count
 
 
@@ -54,14 +54,14 @@ async def get_inout_count(
         return result[0]["count"]
 
 
-async def get_dataframe(
+async def get_people_inout(
     db: AsyncIOMotorDatabase,
     staff_collection: str,
     bodyfacename_collection: str,
     staffcodes: List[StaffCodeStr],
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> pd.DataFrame:
+) -> List[PersonInout]:
     """give a list of staffcode, return a dataframe which contains following columns:
     - staffcode
     - first recognition time
@@ -90,42 +90,22 @@ async def get_dataframe(
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
     if not isinstance(staffcodes, List):
-        df = pd.DataFrame(columns=[DFConst.STAFF, DFConst.FIRST, DFConst.LASTT, DFConst.SAMPL])
-        return df
+        return []
+    if len(staffcodes) == 0:
+        return []
 
     pipeline = pipeline_staffs_inou(
         staffcodes, begin, end, threshold=0.0, bodyfacename_collection=bodyfacename_collection
     )
     staff_collection: AsyncIOMotorCollection = db[staff_collection]
     cursor = staff_collection.aggregate(pipeline)
-    query_result = await cursor.to_list(length=None)
-    if len(query_result) == 0:
-        df = pd.DataFrame(columns=[DFConst.STAFF, DFConst.FIRST, DFConst.LASTT, DFConst.SAMPL])
-        return df
-    df = pd.DataFrame(query_result)  # noqa: F841
 
-    if DFConst.STAFF not in df.columns:
-        raise QueryException(
-            f'in query result, field "{DFConst.STAFF}" not found. Please check the schemas in mongo database'
-        )
+    ret: List[PersonInout] = []
+    async for document in cursor:
+        personinout = PersonInout.model_validate(document)
+        ret.append(personinout)
 
-    if DFConst.FIRST not in df.columns:
-        raise QueryException(
-            f'in query result, field "{DFConst.FIRST}" not found. Please check the schemas in mongo database'
-        )
-
-    if DFConst.LASTT not in df.columns:
-        raise QueryException(
-            f'in query result, field "{DFConst.LASTT}" not found. Please check the schemas in mongo database'
-        )
-
-    if DFConst.SAMPL not in df.columns:
-        raise QueryException(
-            f'in query result, field "{DFConst.SAMPL}" not found. Please check the schemas in mongo database'
-        )
-
-    # TODO: make sure the dataframe has the AppCost.ESTAFF columns
-    return df
+    return ret
 
 
 router = APIRouter()
@@ -158,15 +138,15 @@ async def api_get_people_count(
     )
 
 
-@router.post("/dataframe")
-async def api_get_dataframe(
+@router.post("/people_inout")
+async def api_get_people_inout(
     request: Request,
     staffcodes: List[StaffCodeStr] = Body(...),
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> str:
     app_config = await get_settings(request.app.config, request.app.mongodb)
-    df = await get_dataframe(
+    peopleinout = await get_people_inout(
         db=request.app.mongodb,
         staff_collection=app_config.faceiddb.staff_collection,
         bodyfacename_collection=app_config.faceiddb.face_collection,
@@ -174,4 +154,4 @@ async def api_get_dataframe(
         begin=begin,
         end=end,
     )
-    return df.to_csv(index=False)
+    return str(peopleinout)

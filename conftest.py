@@ -58,6 +58,11 @@ def dburi(request):
 
 
 @pytest.fixture(scope="session")
+def avai_staff():
+    return ["219085", "206424", "267817"]
+
+
+@pytest.fixture(scope="session")
 def collectionconfig(request):
     return {
         "staff_collection": "staffs",

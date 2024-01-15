@@ -1,7 +1,8 @@
+from typing import List
 import pytest
 import pandas as pd
-from ..retrieval import get_people_count, get_inout_count, get_dataframe
-from ..models import DFConst
+from ..retrieval import get_people_count, get_inout_count, get_people_inout
+from ..models import PersonInout
 
 
 @pytest.mark.asyncio
@@ -37,29 +38,29 @@ async def test_get_inout_count(dbinstance, appconfig, test_time):
 
 
 @pytest.mark.asyncio
-async def test_get_dataframe(dbinstance, appconfig, test_time):
+async def test_get_stat(dbinstance, appconfig, test_time, avai_staff):
     begin, end = test_time
     staff_collection = appconfig.faceiddb.staff_collection
     bodyfacename_collection = appconfig.faceiddb.face_collection
-    staffcodes = []
-    ret = await get_dataframe(dbinstance, staff_collection, bodyfacename_collection, staffcodes, begin, end)
-    assert isinstance(ret, pd.DataFrame)
-    assert len(ret) == 0
-    assert DFConst.STAFF in ret.columns
-    assert DFConst.FIRST in ret.columns
-    assert DFConst.LASTT in ret.columns
-    assert DFConst.SAMPL in ret.columns
 
-    ret = await get_dataframe(dbinstance, staff_collection, bodyfacename_collection, None, begin, end)
-    assert isinstance(ret, pd.DataFrame)
+    # testcase 1: empty staffcodes
+    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, [], begin, end)
+    assert isinstance(ret, List)
     assert len(ret) == 0
-    assert DFConst.STAFF in ret.columns
-    assert DFConst.FIRST in ret.columns
-    assert DFConst.LASTT in ret.columns
-    assert DFConst.SAMPL in ret.columns
+
+    # testcase 2: None staffcodes
+    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, None, begin, end)
+    assert isinstance(ret, List)
+    assert len(ret) == 0
+
+    # testcase 3: True staffcodes
+    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin, end)
+    assert isinstance(ret, List)
+    assert len(ret) == len(avai_staff)
+    assert isinstance(ret[0], PersonInout)
 
     with pytest.raises(TypeError):
-        await get_dataframe(dbinstance, staff_collection, bodyfacename_collection, staffcodes, begin, end=None)
+        await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin, end=None)
 
     with pytest.raises(TypeError):
-        await get_dataframe(dbinstance, staff_collection, bodyfacename_collection, staffcodes, begin=None, end=None)
+        await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin=None, end=None)

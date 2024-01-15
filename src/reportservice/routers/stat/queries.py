@@ -1,6 +1,6 @@
 from typing import List
 from datetime import datetime
-from .models import StaffCodeStr, DFConst
+from .models import StaffCodeStr
 
 
 def pipeline_staffs_inou(
@@ -45,15 +45,15 @@ def pipeline_staffs_inou(
         {
             "$project": {
                 "_id": 0,
-                str(DFConst.STAFF): "$staff_code",
-                "full_name": 1,
+                "staff_code": "$staff_code",  # fixed field name, do not change it
+                "full_name": 1,  # fixed field name, do not change it
                 "email": 1,
                 "unit": 1,
                 "department": 1,
                 "title": 1,
-                str(DFConst.SAMPL): "$state",
-                str(DFConst.FIRST): "$found.firstDocument",
-                str(DFConst.LASTT): "$found.lastDocument",
+                "state": "$state",  # fixed field name, do not change it
+                "first_record": "$found.firstDocument",  # fixed field name, do not change it
+                "last_record": "$found.lastDocument",  # fixed field name, do not change it
             }
         },
     ]

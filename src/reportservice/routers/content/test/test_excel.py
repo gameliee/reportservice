@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 import pytest
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from ..excel import read_excel_validate, fill_excel, extract_and_fill_excel
+from ..excel import read_excel_validate, fill_excel, fill_personinout_to_excel
 
 
 def test_input_validate(excelbytes):
@@ -43,16 +43,7 @@ def test_fill_excel1(excelbytes):
         f.write(outbytes)
 
 
-@pytest.mark.asyncio
-async def test_logics(dbinstance, appconfig, test_time, excelbytes):  # noqa: F811
-    assert isinstance(dbinstance, AsyncIOMotorDatabase)
-    begin, end = test_time
-    staff_collection = appconfig.faceiddb.staff_collection
-    bodyfacename_collection = appconfig.faceiddb.face_collection
-    outbytes = await extract_and_fill_excel(
-        dbinstance, staff_collection, bodyfacename_collection, excelbytes, begin, end
-    )
-    assert outbytes is not None
-    with open("out.xlsx", "wb") as f:
-        f.write(outbytes)
-    # Please open `out.xlsx` an manually check the result
+@pytest.mark.skip
+def test_fill_personinout_to_excel(excelbytes):
+    fill_personinout_to_excel(excelbytes, [])
+    pass

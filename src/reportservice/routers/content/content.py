@@ -1,10 +1,10 @@
 from base64 import b64encode, b64decode
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from ..stat import get_people_count, get_inout_count, get_has_sample_count
-from ..excel_helper import extract_and_fill_excel, excel_to_html
-from .models import ContentModel, ContentModelRendered
+from ..stat import get_people_count, get_inout_count, get_has_sample_count, get_people_inout
 from ..config.email_spammer import EmailSpammer
+from .excel import fill_personinout_to_excel, excel_to_html
+from .models import ContentModel, ContentModelRendered, ContentQueryResult
 
 
 def get_weekday_vn(today):
@@ -17,47 +17,70 @@ def get_weekday_Vn(today):
     return vn_name[today.isoweekday() - 1]
 
 
-async def render(
+async def query(
     db: AsyncIOMotorDatabase,
     staff_collection: str,
     bodyfacename_collection: str,
     content: ContentModel,
-    render_date: datetime,
+    query_date: datetime,
+) -> ContentQueryResult:
+    day_begin = datetime.combine(date=query_date.date(), time=datetime.min.time())
+    day_end = datetime.combine(date=query_date.date(), time=datetime.max.time())
+    in_begin = datetime.combine(date=query_date.date(), time=content.checkin_begin.time())
+    in_end = in_begin + content.checkin_duration
+    out_begin = datetime.combine(date=query_date.date(), time=content.checkout_begin.time())
+    out_end = out_begin + content.checkout_duration
+    people_count = await get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end)
+    # has_sample_count = get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
+    checkin_count = await get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end)
+    checkout_count = await get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end)
+    total_count = await get_inout_count(
+        db, staff_collection, bodyfacename_collection, day_begin, day_end
+    )  # BUG: this is not correct, change to begin of the day to end of the day
+
+    people_inout = await get_people_inout(
+        db, staff_collection, bodyfacename_collection, content.staff_codes, day_begin, day_end
+    )
+
+    return ContentQueryResult(
+        query_time=query_date,
+        people_count=people_count,
+        checkin_count=checkin_count,
+        checkout_count=checkout_count,
+        total_count=total_count,
+        people_inout=people_inout,
+    )
+
+
+async def render(
+    query_result: ContentQueryResult,
+    content: ContentModel,
 ) -> ContentModelRendered:
     """render the content to a ContentModelRendered"""
-    day_begin = datetime.combine(date=render_date.date(), time=datetime.min.time())
-    day_end = datetime.combine(date=render_date.date(), time=datetime.max.time())
-    in_begin = datetime.combine(date=render_date.date(), time=content.checkin_begin.time())
-    in_end = in_begin + content.checkin_duration
-    out_begin = datetime.combine(date=render_date.date(), time=content.checkout_begin.time())
-    out_end = out_begin + content.checkout_duration
 
     data = {  # noqa: F841
-        "year": render_date.year,
-        "month": render_date.month,
-        "date": render_date.day,
-        "hour": render_date.hour,
-        "min": render_date.minute,
-        "sec": render_date.second,
-        "weekday_vn": get_weekday_vn(render_date),
-        "weekday_Vn": get_weekday_Vn(render_date),
-        "people_count": await get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end),
-        # "has_sample_count": get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
-        "checkin_count": await get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end),
-        "checkout_count": await get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end),
-        "total_count": await get_inout_count(
-            db, staff_collection, bodyfacename_collection, day_begin, day_end
-        ),  # BUG: this is not correct, change to begin of the day to end of the day
+        "year": query_result.query_time.year,
+        "month": query_result.query_time.month,
+        "date": query_result.query_time.day,
+        "hour": query_result.query_time.hour,
+        "min": query_result.query_time.minute,
+        "sec": query_result.query_time.second,
+        "weekday_vn": get_weekday_vn(query_result.query_time),
+        "weekday_Vn": get_weekday_Vn(query_result.query_time),
+        "people_count": query_result.people_count,
+        # "has_sample_count": query_result.has
+        "checkin_count": query_result.checkin_count,
+        "checkout_count": query_result.checkout_count,
+        "total_count": query_result.total_count,
+        "people_inout": query_result.people_inout,
         "table": "",
     }
 
-    # excel related part
+    # convert query_result.people_inout to excel table
     excel_bytes = b64decode(str(content.excel).encode("utf-8"))  # noqa: F841
     fill_excel_bytes = None
     if content.is_excel_uploaded():
-        fill_excel_bytes = await extract_and_fill_excel(
-            db, staff_collection, bodyfacename_collection, excel_bytes, day_begin, day_end
-        )
+        fill_excel_bytes = fill_personinout_to_excel(query_result.people_inout, excel_bytes)
         html = excel_to_html(fill_excel_bytes)
         data["table"] = html
 

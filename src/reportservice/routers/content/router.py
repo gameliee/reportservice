@@ -8,9 +8,9 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from ...settings import AppSettings
 from ..config.router import get_spammer, get_settings
-from ..excel_helper import read_excel_validate, ExcelInvalidException
-from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate
-from .content import render, send
+from .excel import read_excel_validate, ExcelInvalidException, ExcelColumn
+from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate, ContentQueryResult
+from .content import render, send, query
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ async def get_content(request: Request, id):
 
 @router.post(
     "/",
-    description="Create a content, without the excel file. Please upload the excel file in another query",
+    description="Create a content without an excel file. Please upload the excel file in another query if needed",
     response_model=ContentModel,
 )
 async def create_content(request: Request, content: ContentModelCreate):
@@ -61,6 +61,8 @@ async def create_content(request: Request, content: ContentModelCreate):
     response_model=bool,
 )
 async def upload_excel(request: Request, id, excelfile: UploadFile = File(...)):
+    """upload the excel file for the content.\n
+    NOTE: when upload excel file, the content will update its staff_codes"""
     app_setting: AppSettings = request.app.config
     COLNAME = app_setting.DB_COLLECTION_CONTENT
     excel = await excelfile.read()
@@ -71,12 +73,16 @@ async def upload_excel(request: Request, id, excelfile: UploadFile = File(...)):
         raise HTTPException(status_code=413, detail=error_message)
 
     try:
-        read_excel_validate(excel)
+        df = read_excel_validate(excel)
     except ExcelInvalidException as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    new_staff_codes = df[ExcelColumn.ESTAFF].dropna().tolist()
+
     base64_str = b64encode(excel).decode("utf-8")
-    result = await request.app.mongodb[COLNAME].update_one({"_id": id}, {"$set": {"excel": base64_str}})
+    result = await request.app.mongodb[COLNAME].update_one(
+        {"_id": id}, {"$set": {"excel": base64_str, "staff_codes": new_staff_codes}}
+    )
 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail=f"Content {id} not found")
@@ -147,23 +153,35 @@ async def update_content(request: Request, id, content: ContentModelUpdate):
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 
 
-@router.get("/{id}/render", response_description="Render the content", response_model=ContentModelRendered)
-async def render_content(request: Request, id: str, render_date: Optional[datetime] = None):
-    """Render the content with the data of render_date, default for today"""
-    if render_date is None:
-        render_date = datetime.now()
+@router.get("/{id}/query", response_description="Query the content", response_model=ContentQueryResult)
+async def query_content(request: Request, id: str, query_date: Optional[datetime] = None):
+    """Query the content with the data of query_date, default for today"""
+    if query_date is None:
+        query_date = datetime.now()
     content = await get_content(request=request, id=id)
     content = ContentModel.model_validate(content)
 
     app_config = await get_settings(request.app.config, request.app.mongodb)
 
-    text = await render(
+    query_result = await query(
         request.app.mongodb,
         app_config.faceiddb.staff_collection,
         app_config.faceiddb.face_collection,
         content,
-        render_date,
+        query_date,
     )
+
+    request.app.logger.info(query_result, extra={"id": id})
+    return query_result
+
+
+@router.get("/{id}/render", response_description="Render the content", response_model=ContentModelRendered)
+async def query_render_content(request: Request, id: str, render_date: Optional[datetime] = None):
+    """Render the content with the data of render_date, default for today"""
+    query_result = await query_content(request, id, render_date)
+    content = await get_content(request=request, id=id)
+    content = ContentModel.model_validate(content)
+    text = await render(query_result, content)
 
     request.app.logger.info(text, extra={"id": id})
     return text
@@ -174,7 +192,7 @@ async def render_and_send(request: Request, id: str, render_date: Optional[datet
     """Render the content with the data of render_date, then send"""
     if render_date is None:
         render_date = datetime.now()
-    text = await render_content(request, id, render_date)
+    text = await query_render_content(request, id, render_date)
 
     async with get_spammer(request) as spammer:
         ret = await send(text, spammer)

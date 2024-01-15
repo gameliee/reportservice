@@ -46,7 +46,7 @@ class CronTriggerModel(TriggerModelBase):
     cron: str = Field(..., description="cron string")
     start_date: Optional[datetime] = Field(None, description="start date")
     end_date: Optional[datetime] = Field(None, description="end date")
-    exclude_date: Optional[List[datetime]] = Field(None, description="exclude date")
+    exclude_dates: Optional[List[datetime]] = Field([], description="exclude date")
 
     @model_validator(mode="after")
     def validate_end_date(self) -> "CronTriggerModel":
@@ -59,6 +59,7 @@ class IntervalTriggerModel(TriggerModelBase):
     type: Literal[TriggerModelType.INTERVAL] = Field(default=TriggerModelType.INTERVAL, description="trigger type")
     interval: NonNegativeInt = Field(..., description="interval in seconds")
     start_time: datetime = Field(..., description="start time")
+    exclude_dates: Optional[List[datetime]] = Field([], description="exclude date")
 
 
 class DateTriggerModel(TriggerModelBase):

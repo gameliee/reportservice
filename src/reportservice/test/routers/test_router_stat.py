@@ -27,5 +27,5 @@ def test_api_get_people_count(testclient: TestClient, _payload, generate_conf): 
 
 def test_api_get_dataframe(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     body = ["abc"]
-    response = testclient.post(f"{PREFIX}/dataframe", params=_payload, data=json.dumps(body))
+    response = testclient.post(f"{PREFIX}/people_inout", params=_payload, data=json.dumps(body))
     assert response.status_code == 200, response.text

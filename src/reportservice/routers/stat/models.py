@@ -1,26 +1,19 @@
 """data models"""
-from typing import Annotated
+from typing import Annotated, Optional
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
 
 StaffCodeStr = Annotated[str, "staff code"]
 
 
-class DFConst:
-    # QUERY_TIMEOUT = 10
-    # TITLE = "title"
-    # DEPARTMENT = "department"
-    # UNIT = "unit"
-    # STAFFCODE = "staffcode"
-    # EMAIL = "email"
-    # FULLNAME = "fullname"
-    # CHECKIN = "checkin"
-    # CHECKOUT = "checkout"
-
-    # excel columns
-    STAFF = "mã nhân viên"
-    FIRST = "ghi nhận lần đầu"
-    LASTT = "ghi nhận lần cuối"
-    SAMPL = "trạng thái mẫu"
-
-
 class QueryException(Exception):
     pass
+
+
+class PersonInout(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    staff_code: StaffCodeStr
+    full_name: str
+    state: str
+    first_record: Optional[datetime] = Field(None, alias="first record in the database")
+    last_record: Optional[datetime] = Field(None, alias="last record in the database")
