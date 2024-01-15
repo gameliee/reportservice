@@ -5,12 +5,14 @@ from pydantic_settings import BaseSettings
 FIXID = "dontchangeme"
 
 
-class FaceIDDBSettingsModelUpdate(BaseSettings):
+class FaceIDDBConfigModelUpdate(BaseSettings):
+    database: Optional[str] = None
     staff_collection: Optional[str] = None
     face_collection: Optional[str] = None
 
 
-class FaceIDDBSettingsModel(BaseSettings):
+class FaceIDDBConfigModel(BaseSettings):
+    database: str
     staff_collection: str
     face_collection: str
     model_config = ConfigDict(
@@ -22,12 +24,12 @@ class FaceIDDBSettingsModel(BaseSettings):
         }
     )
 
-    def update(self, u: FaceIDDBSettingsModelUpdate):
+    def update(self, u: FaceIDDBConfigModelUpdate):
         for k, v in u.model_dump(exclude_none=True).items():
             setattr(self, k, v)
 
 
-class SmtpSettingsModelUpdate(BaseSettings):
+class SmtpConfigModelUpdate(BaseSettings):
     enable: Optional[bool] = None
     username: Optional[str] = None
     account: Optional[EmailStr] = None
@@ -37,7 +39,7 @@ class SmtpSettingsModelUpdate(BaseSettings):
     useSSL: Optional[bool] = None
 
 
-class SmtpSettingsModel(BaseSettings):
+class SmtpConfigsModel(BaseSettings):
     enable: bool = False
     username: str
     account: EmailStr
@@ -59,14 +61,14 @@ class SmtpSettingsModel(BaseSettings):
         }
     )
 
-    def update(self, u: SmtpSettingsModelUpdate):
+    def update(self, u: SmtpConfigModelUpdate):
         for k, v in u.model_dump(exclude_none=True).items():
             setattr(self, k, v)
 
 
-class AppSettingsModelUpdate(BaseSettings):
-    faceiddb: Optional[FaceIDDBSettingsModelUpdate] = None
-    smtp: Optional[SmtpSettingsModelUpdate] = None
+class AppConfigModelUpdate(BaseSettings):
+    faceiddb: Optional[FaceIDDBConfigModelUpdate] = None
+    smtp: Optional[SmtpConfigModelUpdate] = None
     model_config = ConfigDict(populate_by_name=True)
 
     def to_flatten(self) -> dict:
@@ -81,13 +83,13 @@ class AppSettingsModelUpdate(BaseSettings):
         return ret
 
 
-class AppSettingsModel(BaseSettings):
+class AppConfigModel(BaseSettings):
     _id: str = PrivateAttr(FIXID)
-    faceiddb: FaceIDDBSettingsModel
-    smtp: SmtpSettingsModel
+    faceiddb: FaceIDDBConfigModel
+    smtp: SmtpConfigsModel
     model_config = ConfigDict(populate_by_name=True)
 
-    def update(self, u: AppSettingsModelUpdate):
+    def update(self, u: AppConfigModelUpdate):
         if u.faceiddb is not None:
             self.faceiddb.update(u.faceiddb)
         if u.smtp is not None:

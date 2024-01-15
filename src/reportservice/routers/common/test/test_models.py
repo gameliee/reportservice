@@ -1,8 +1,8 @@
-from ..models import AppSettingsModelUpdate, AppSettingsModel, SmtpSettingsModel, SmtpSettingsModelUpdate
+from ..config_models import AppConfigModelUpdate, AppConfigModel, SmtpConfigsModel, SmtpConfigModelUpdate
 
 
 def test_SmtpSettingsModel():
-    base = SmtpSettingsModel.model_validate(
+    base = SmtpConfigsModel.model_validate(
         {
             "account": "testnv@example.com",
             "enable": "false",
@@ -14,17 +14,18 @@ def test_SmtpSettingsModel():
         }
     )
 
-    update = SmtpSettingsModelUpdate.model_validate({"username": "hola"})
+    update = SmtpConfigModelUpdate.model_validate({"username": "hola"})
     base.update(update)
-    SmtpSettingsModel.model_construct(**update.model_dump())
+    SmtpConfigsModel.model_construct(**update.model_dump())
     assert base.username == update.username
     assert base.account is not None
 
 
 def test_AppSettingsModelUpdate_merge_into_AppSettingsModel():
-    base = AppSettingsModel.model_validate(
+    base = AppConfigModel.model_validate(
         {
             "faceiddb": {
+                "database": "FaceID",
                 "staff_collection": "BodyFaceName",
                 "face_collection": "staff",
             },
@@ -39,7 +40,7 @@ def test_AppSettingsModelUpdate_merge_into_AppSettingsModel():
             },
         }
     )
-    update = AppSettingsModelUpdate.model_validate({"smtp": {"username": "lazada"}})
+    update = AppConfigModelUpdate.model_validate({"smtp": {"username": "lazada"}})
     base.update(update)
     assert base.smtp.username == update.smtp.username
     assert base.faceiddb is not None

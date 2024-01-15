@@ -8,29 +8,29 @@ dynasettings = Dynaconf(
 )
 
 
-class CommonSettings(BaseSettings):
+class CommonSettingsModel(BaseSettings):
     LOG_FILE: str = "log/debug.log"
     APP_NAME: str = "FARM"
     DEBUG_MODE: bool = False
     WORKERS: int = 1
 
 
-class ServerSettings(BaseSettings):
+class ServerSettingsModel(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 3002
 
 
-class DatabaseSettings(BaseSettings):
+class DatabaseSettingsModel(BaseSettings):
     DB_URL: str
-    DB_NAME: str
-    DB_COLLECTION_SETTINGS: str
+    DB_REPORT_NAME: str
+    DB_COLLECTION_CONFIG: str
     DB_COLLECTION_CONTENT: str
     DB_COLLECTION_TASK: str
     DB_COLLECTION_SCHEDULER: str
 
 
-class AppSettings(CommonSettings, ServerSettings, DatabaseSettings):
+class AppSettingsModel(CommonSettingsModel, ServerSettingsModel, DatabaseSettingsModel):
     model_config = SettingsConfigDict(extra="ignore")
 
 
-settings = AppSettings.model_validate(dynasettings.as_dict())
+settings = AppSettingsModel.model_validate(dynasettings.as_dict())

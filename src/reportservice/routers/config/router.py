@@ -1,43 +1,39 @@
-from datetime import datetime
-from typing import List, AsyncIterable
 from contextlib import asynccontextmanager
-from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
+from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from .models import AppSettingsModel, AppSettingsModelUpdate
-from .email_spammer import EmailSpammer
+from ..common import AppConfigModel, AppConfigModelUpdate
+from ..common import DepAppConfig, DepConfigCollection
+from ..common import EmailSpammer
 
 router = APIRouter()
 
 
-async def validate_settings(setting: AppSettingsModel) -> bool:
+async def validate_config(config: AppConfigModel) -> bool:
     # TODO: validate the collection names
     try:
         # construct email connection here
-        if setting.smtp.enable:
+        if config.smtp.enable:
             EmailSpammer(
-                setting.smtp.username,
-                setting.smtp.account,
-                setting.smtp.password,
-                setting.smtp.server,
-                setting.smtp.port,
-                useSSL=setting.smtp.useSSL,
+                config.smtp.username,
+                config.smtp.account,
+                config.smtp.password,
+                config.smtp.server,
+                config.smtp.port,
+                useSSL=config.smtp.useSSL,
             )
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Email settings did not work: {e} with settings {setting.smtp}")
+        raise HTTPException(status_code=422, detail=f"Email settings did not work: {e} with settings {config.smtp}")
     return True
 
 
-@router.post("/", response_description="Create Settings", response_model=AppSettingsModel)
-async def create_settings(request: Request, setting: AppSettingsModel = Body(...)):
-    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
-    latest = await request.app.mongodb[COLNAME].find_one()
+@router.post("/", response_model=AppConfigModel)
+async def create_config(collection: DepConfigCollection, setting: AppConfigModel = Body(...)):
+    latest = await collection.find_one()
     if latest is not None:
         raise HTTPException(status_code=303, detail="already have settings, please use PUT or DELETE")
 
-    await validate_settings(setting)
-    collection = request.app.mongodb[COLNAME]
+    await validate_config(setting)
     setting = jsonable_encoder(setting)
     new_setting = await collection.insert_one(setting)
     created_setting = await collection.find_one({"_id": new_setting.inserted_id})
@@ -45,37 +41,24 @@ async def create_settings(request: Request, setting: AppSettingsModel = Body(...
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_setting)
 
 
-async def get_settings(config: AppSettingsModel, db: AsyncIOMotorDatabase) -> AppSettingsModel:
-    collection = db[config.DB_COLLECTION_SETTINGS]
+@router.get("/", response_description="Get Config", response_model=AppConfigModel)
+async def api_get_config(_config: DepAppConfig):
+    return _config.model_dump()
+
+
+@router.put("/", response_model=AppConfigModel)
+async def update_config(collection: DepConfigCollection, config: AppConfigModelUpdate = Body(...)):
     latest = await collection.find_one()
     if not latest:
         raise HTTPException(status_code=404, detail="No settings found")
-    latest.pop("_id")
-    return AppSettingsModel.model_validate(latest)
-
-
-@router.get("/", response_description="Get Settings", response_model=AppSettingsModel)
-async def api_get_settings(request: Request):
-    latest = await get_settings(request.app.config, request.app.mongodb)
-    return latest.model_dump()
-
-
-@router.put("/", response_description="Update settings", response_model=AppSettingsModel)
-async def update_settings(request: Request, setting: AppSettingsModelUpdate = Body(...)):
-    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
-    latest = await request.app.mongodb[COLNAME].find_one()
-    if not latest:
-        raise HTTPException(status_code=404, detail="No settings found")
     id = latest.pop("_id")
-    latest = AppSettingsModel.model_validate(latest)
-    latest.update(setting)
+    latest = AppConfigModel.model_validate(latest)
+    latest.update(config)
 
-    await validate_settings(AppSettingsModel.model_validate(latest))
+    await validate_config(AppConfigModel.model_validate(latest))
 
     # turn to something like "smtp.username": "hola"
-    fields = setting.to_flatten()
-
-    collection = request.app.mongodb[COLNAME]
+    fields = config.to_flatten()
     if len(fields) >= 1:
         update_result = await collection.update_one({"_id": id}, {"$set": fields})
         if update_result.modified_count == 1:
@@ -90,17 +73,16 @@ async def update_settings(request: Request, setting: AppSettingsModelUpdate = Bo
     raise HTTPException(status_code=404, detail="No settings found")
 
 
-@router.delete("/", response_description="Delete settings")
-async def delete_settings(request: Request):
-    COLNAME = request.app.config.DB_COLLECTION_SETTINGS
-    settings = await request.app.mongodb[COLNAME].find_one()
-    if not settings:
+@router.delete("/")
+async def delete_config(collection: DepConfigCollection):
+    config = await collection.find_one()
+    if not config:
         raise HTTPException(status_code=404, detail="No settings found")
 
-    id = settings.pop("_id")
-    settings = AppSettingsModel.model_validate(settings)
+    id = config.pop("_id")
+    config = AppConfigModel.model_validate(config)
 
-    delete_result = await request.app.mongodb[COLNAME].delete_one({"_id": id})
+    delete_result = await collection.delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
         return JSONResponse(status_code=status.HTTP_200_OK, content="Deleted")
@@ -108,22 +90,20 @@ async def delete_settings(request: Request):
     raise HTTPException(status_code=404, detail="Nothing to delete")
 
 
-@asynccontextmanager
-async def get_spammer(request: Request):
-    settings = await get_settings(request.app.config, request.app.mongodb)
-    settings = AppSettingsModel.model_validate(settings)
-    smtpsettings = settings.smtp
+# @asynccontextmanager
+# async def get_spammer(app_config: DepAppConfig):
+#     smtpconfig = app_config.smtp
 
-    if not smtpsettings.enable:
-        yield None
-    else:
-        spammer = EmailSpammer(
-            smtpsettings.username,
-            smtpsettings.account,
-            smtpsettings.password,
-            smtpsettings.server,
-            smtpsettings.port,
-            useSSL=smtpsettings.useSSL,
-        )
+#     if not smtpconfig.enable:
+#         yield None
+#     else:
+#         spammer = EmailSpammer(
+#             smtpconfig.username,
+#             smtpconfig.account,
+#             smtpconfig.password,
+#             smtpconfig.server,
+#             smtpconfig.port,
+#             useSSL=smtpconfig.useSSL,
+#         )
 
-        yield spammer
+#         yield spammer

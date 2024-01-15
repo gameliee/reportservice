@@ -1,18 +1,19 @@
 import pytest
 from fastapi import HTTPException
-from ..router import validate_settings
-from ..models import AppSettingsModel, FaceIDDBSettingsModel, SmtpSettingsModel
+from ..router import validate_config
+from ...common.config_models import AppConfigModel, FaceIDDBConfigModel, SmtpConfigsModel
 
 
 @pytest.mark.asyncio
 async def test_validate_settings():
     # invalid test case
-    settings = AppSettingsModel(
-        faceiddb=FaceIDDBSettingsModel(
+    settings = AppConfigModel(
+        faceiddb=FaceIDDBConfigModel(
+            database="",
             staff_collection="",
             face_collection="",
         ),
-        smtp=SmtpSettingsModel(
+        smtp=SmtpConfigsModel(
             enable=True,
             username="",
             account="a@a.com",
@@ -24,4 +25,4 @@ async def test_validate_settings():
     )
 
     with pytest.raises(HTTPException):
-        await validate_settings(settings)
+        await validate_config(settings)

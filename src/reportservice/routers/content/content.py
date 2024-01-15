@@ -1,8 +1,8 @@
 from base64 import b64encode, b64decode
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorCollection
 from ..stat import get_people_count, get_inout_count, get_has_sample_count, get_people_inout
-from ..config.email_spammer import EmailSpammer
+from ..common import EmailSpammer
 from .excel import fill_personinout_to_excel, excel_to_html
 from .models import ContentModel, ContentModelRendered, ContentQueryResult
 
@@ -18,9 +18,8 @@ def get_weekday_Vn(today):
 
 
 async def query(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+    staff_collection: AsyncIOMotorCollection,
+    bodyfacename_collection: AsyncIOMotorCollection,
     content: ContentModel,
     query_date: datetime,
 ) -> ContentQueryResult:
@@ -30,16 +29,16 @@ async def query(
     in_end = in_begin + content.checkin_duration
     out_begin = datetime.combine(date=query_date.date(), time=content.checkout_begin.time())
     out_end = out_begin + content.checkout_duration
-    people_count = await get_people_count(db, staff_collection, bodyfacename_collection, day_begin, day_end)
+    people_count = await get_people_count(staff_collection, day_begin, day_end)
     # has_sample_count = get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
-    checkin_count = await get_inout_count(db, staff_collection, bodyfacename_collection, in_begin, in_end)
-    checkout_count = await get_inout_count(db, staff_collection, bodyfacename_collection, out_begin, out_end)
+    checkin_count = await get_inout_count(bodyfacename_collection, in_begin, in_end)
+    checkout_count = await get_inout_count(bodyfacename_collection, out_begin, out_end)
     total_count = await get_inout_count(
-        db, staff_collection, bodyfacename_collection, day_begin, day_end
+        bodyfacename_collection, day_begin, day_end
     )  # BUG: this is not correct, change to begin of the day to end of the day
 
     people_inout = await get_people_inout(
-        db, staff_collection, bodyfacename_collection, content.staff_codes, day_begin, day_end
+        staff_collection, bodyfacename_collection, content.staff_codes, day_begin, day_end
     )
 
     return ContentQueryResult(

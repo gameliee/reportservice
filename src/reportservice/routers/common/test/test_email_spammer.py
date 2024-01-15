@@ -5,7 +5,7 @@ from ..email_spammer import EmailSpammer
 
 def test_email_spammer(mocker: MockerFixture):
     # mock the smtplib.SMTP object
-    object = "src.reportservice.routers.config.email_spammer.smtplib.SMTP_SSL"
+    object = "src.reportservice.routers.common.email_spammer.smtplib.SMTP_SSL"
     mock_SMTP = mocker.MagicMock(name=object)
     mocker.patch(object, new=mock_SMTP)
 

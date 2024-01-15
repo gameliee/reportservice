@@ -65,6 +65,7 @@ def avai_staff():
 @pytest.fixture(scope="session")
 def collectionconfig(request):
     return {
+        "database": "FaceID",
         "staff_collection": "staffs",
         "face_collection": "BodyFaceName",
     }
@@ -110,9 +111,10 @@ def excelbytes(excelfile):
 
 
 @pytest.fixture(scope="session")
-def random_collection_name(dburi):
-    collection_name = "".join(random.choices(string.ascii_lowercase, k=10))
-    return collection_name
+def random_database_name(dburi):
+    """random database name for this application"""
+    name = "".join(random.choices(string.ascii_lowercase, k=10))
+    return name
 
 
 @pytest.fixture

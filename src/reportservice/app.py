@@ -8,11 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 from .settings import settings
 from . import customlog
 
-from .routers.stat.retrieval import router as stat_router
+from .routers.stat.router import router as stat_router
 from .routers.config.router import router as config_router
 from .routers.content.router import router as content_router
 from .routers.task.router import router as task_router
@@ -27,17 +27,17 @@ async def log_everythings(request: Request):
         logger.info(f"Received request: {request.method} {request.url}")
 
 
-async def init_configurations(app: FastAPI):
+async def init_settings(app: FastAPI):
     """init the configurations"""
     app.logger.info("Loading configurations...")
-    app.config = settings
+    app.settings = settings
 
 
 async def init_database(app: FastAPI):
     """init the database connection"""
     app.logger.info("Connecting to database...")
     app.mongodb_client = AsyncIOMotorClient(settings.DB_URL, uuidRepresentation="standard")
-    app.mongodb: AsyncIOMotorDatabase = app.mongodb_client[settings.DB_NAME]
+    # app.mongodb: AsyncIOMotorDatabase = app.mongodb_client[settings.DB_REPORT_NAME]
 
 
 async def close_database(app: FastAPI):
@@ -50,7 +50,7 @@ async def init_scheduler(app: FastAPI):
     """init scheduler instance"""
     jobstores = {
         "default": MongoDBJobStore(
-            database=settings.DB_NAME, collection=settings.DB_COLLECTION_SCHEDULER, host=settings.DB_URL
+            database=settings.DB_REPORT_NAME, collection=settings.DB_COLLECTION_SCHEDULER, host=settings.DB_URL
         ),
     }
     job_defaults = {
@@ -72,7 +72,7 @@ async def close_scheduler(app: FastAPI):
 async def lifespan(app: FastAPI):
     """manage the database connection, the scheduler using lifespan"""
     app.logger = logging.getLogger(settings.APP_NAME)
-    await init_configurations(app)
+    await init_settings(app)
     await init_database(app)
     await init_scheduler(app)
     yield

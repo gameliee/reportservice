@@ -6,8 +6,8 @@ PORT = 3002
 DEBUG_MODE = true
 
 DB_URL = "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
-DB_NAME = "FaceID"
-DB_COLLECTION_SETTINGS = "ReportConfigurations"
+DB_REPORT_NAME = "ReportService"
+DB_COLLECTION_CONFIG = "ReportConfigurations"
 DB_COLLECTION_CONTENT = "ReportContent"
 DB_COLLECTION_TASK = "ReportTask"
 DB_COLLECTION_SCHEDULER = "ReportScheduler"

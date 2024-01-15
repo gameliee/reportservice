@@ -2,29 +2,23 @@ from typing import List
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
-import pandas as pd
-from ..config.router import get_settings
 from .models import StaffCodeStr, QueryException, PersonInout
 from .queries import pipeline_staffs_inou, pipeline_count
 
 
 async def get_people_count(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+    staff_collection: AsyncIOMotorCollection,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
     """count all people in the database"""
-    staff_collection: AsyncIOMotorCollection = db[staff_collection]
     count = await staff_collection.distinct("staff_code")
     return len(count)
 
 
 async def get_has_sample_count(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+    staff_collection: AsyncIOMotorCollection,
+    bodyfacename_collection: AsyncIOMotorCollection,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
@@ -32,9 +26,7 @@ async def get_has_sample_count(
 
 
 async def get_inout_count(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+    bodyfacename_collection: AsyncIOMotorCollection,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
@@ -44,7 +36,6 @@ async def get_inout_count(
         end = datetime.fromisoformat(end)
     pipeline = pipeline_count(begin, end, 0.63)
     # Execute the pipeline
-    bodyfacename_collection: AsyncIOMotorCollection = db[bodyfacename_collection]
     cursor = bodyfacename_collection.aggregate(pipeline)
     result = await cursor.to_list(length=1)
 
@@ -55,9 +46,8 @@ async def get_inout_count(
 
 
 async def get_people_inout(
-    db: AsyncIOMotorDatabase,
-    staff_collection: str,
-    bodyfacename_collection: str,
+    staff_collection: AsyncIOMotorCollection,
+    bodyfacename_collection: AsyncIOMotorCollection,
     staffcodes: List[StaffCodeStr],
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
@@ -95,9 +85,8 @@ async def get_people_inout(
         return []
 
     pipeline = pipeline_staffs_inou(
-        staffcodes, begin, end, threshold=0.0, bodyfacename_collection=bodyfacename_collection
+        staffcodes, begin, end, threshold=0.0, bodyfacename_collection_name=bodyfacename_collection.name
     )
-    staff_collection: AsyncIOMotorCollection = db[staff_collection]
     cursor = staff_collection.aggregate(pipeline)
 
     ret: List[PersonInout] = []
@@ -106,52 +95,3 @@ async def get_people_inout(
         ret.append(personinout)
 
     return ret
-
-
-router = APIRouter()
-
-
-@router.get("/inout")
-async def api_get_inout_count(
-    request: Request,
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> int:
-    app_config = await get_settings(request.app.config, request.app.mongodb)
-    db = request.app.mongodb
-
-    return await get_inout_count(
-        db, app_config.faceiddb.staff_collection, app_config.faceiddb.face_collection, begin, end
-    )
-
-
-@router.get("/people")
-async def api_get_people_count(
-    request: Request,
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> int:
-    app_config = await get_settings(request.app.config, request.app.mongodb)
-    db = request.app.mongodb
-    return await get_people_count(
-        db, app_config.faceiddb.staff_collection, app_config.faceiddb.face_collection, begin, end
-    )
-
-
-@router.post("/people_inout")
-async def api_get_people_inout(
-    request: Request,
-    staffcodes: List[StaffCodeStr] = Body(...),
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> str:
-    app_config = await get_settings(request.app.config, request.app.mongodb)
-    peopleinout = await get_people_inout(
-        db=request.app.mongodb,
-        staff_collection=app_config.faceiddb.staff_collection,
-        bodyfacename_collection=app_config.faceiddb.face_collection,
-        staffcodes=staffcodes,
-        begin=begin,
-        end=end,
-    )
-    return str(peopleinout)

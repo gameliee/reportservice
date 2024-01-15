@@ -9,14 +9,14 @@ def pipeline_staffs_inou(
     end: datetime = "2023-12-27T23:59:59.999+00:00",
     threshold: float = 0.63,
     has_mask: bool = False,
-    bodyfacename_collection: str = "BodyFaceName",
+    bodyfacename_collection_name: str = "BodyFaceName",
 ):
     """get staffs min and max recognition time within the windows [begin, end]"""
     query = [
         {"$match": {"staff_code": {"$in": staffcodes}}},
         {
             "$lookup": {
-                "from": bodyfacename_collection,
+                "from": bodyfacename_collection_name,
                 "localField": "staff_code",
                 "foreignField": "staff_id",
                 "as": "found",

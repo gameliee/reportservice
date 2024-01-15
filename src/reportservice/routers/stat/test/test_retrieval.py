@@ -1,66 +1,84 @@
 from typing import List
 import pytest
-import pandas as pd
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from ..retrieval import get_people_count, get_inout_count, get_people_inout
 from ..models import PersonInout
+from ...common import AppConfigModel
+from ...common.conftest import appconfig
+
+
+@pytest.fixture
+def fixture_faceiddb(dburi, testsettings, collectionconfig) -> AsyncIOMotorDatabase:
+    mongodb_client = AsyncIOMotorClient(dburi, uuidRepresentation="standard")
+    faceid_database_name = collectionconfig["database"]
+    mongodb: AsyncIOMotorDatabase = mongodb_client[faceid_database_name]
+    return mongodb
+
+
+@pytest.fixture
+def fixture_bodyfacename_collection(
+    fixture_faceiddb, appconfig: AppConfigModel  # noqa: F811
+) -> AsyncIOMotorCollection:
+    return fixture_faceiddb[appconfig.faceiddb.face_collection]
+
+
+@pytest.fixture
+def fixture_staff_collection(fixture_faceiddb, appconfig: AppConfigModel) -> AsyncIOMotorCollection:  # noqa: F811
+    return fixture_faceiddb[appconfig.faceiddb.staff_collection]
 
 
 @pytest.mark.asyncio
-async def test_get_people_count(dbinstance, appconfig, test_time):
+async def test_get_people_count(fixture_staff_collection, test_time):
     begin, end = test_time
     count = await get_people_count(
-        dbinstance,
-        staff_collection=appconfig.faceiddb.staff_collection,
-        bodyfacename_collection=appconfig.faceiddb.face_collection,
+        fixture_staff_collection,
         begin=begin,
         end=end,
     )
-    assert count == 3
+    assert count == 3, fixture_staff_collection.name
 
 
 @pytest.mark.asyncio
-async def test_get_inout_count(dbinstance, appconfig, test_time):
+async def test_get_inout_count(fixture_bodyfacename_collection, test_time):
     begin, end = test_time
-    staff_collection = appconfig.faceiddb.staff_collection
-    bodyfacename_collection = appconfig.faceiddb.face_collection
-    ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, begin, end)
+    ret = await get_inout_count(fixture_bodyfacename_collection, begin, end)
     assert ret == 2
-    ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, end, begin)
+    ret = await get_inout_count(fixture_bodyfacename_collection, end, begin)
     assert ret == 0
     with pytest.raises(TypeError):
-        ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, begin=None, end=end)
+        ret = await get_inout_count(fixture_bodyfacename_collection, begin=None, end=end)
     with pytest.raises(TypeError):
-        ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, begin=1, end=end)
+        ret = await get_inout_count(fixture_bodyfacename_collection, begin=1, end=end)
     with pytest.raises(TypeError):
-        ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, begin=begin, end=1)
+        ret = await get_inout_count(fixture_bodyfacename_collection, begin=begin, end=1)
     with pytest.raises(ValueError):
-        ret = await get_inout_count(dbinstance, staff_collection, bodyfacename_collection, begin="1", end=end)
+        ret = await get_inout_count(fixture_bodyfacename_collection, begin="1", end=end)
 
 
 @pytest.mark.asyncio
-async def test_get_stat(dbinstance, appconfig, test_time, avai_staff):
+async def test_get_stat(fixture_staff_collection, fixture_bodyfacename_collection, test_time, avai_staff):
     begin, end = test_time
-    staff_collection = appconfig.faceiddb.staff_collection
-    bodyfacename_collection = appconfig.faceiddb.face_collection
 
     # testcase 1: empty staffcodes
-    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, [], begin, end)
+    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, [], begin, end)
     assert isinstance(ret, List)
     assert len(ret) == 0
 
     # testcase 2: None staffcodes
-    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, None, begin, end)
+    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, None, begin, end)
     assert isinstance(ret, List)
     assert len(ret) == 0
 
     # testcase 3: True staffcodes
-    ret = await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin, end)
+    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin, end)
     assert isinstance(ret, List)
     assert len(ret) == len(avai_staff)
     assert isinstance(ret[0], PersonInout)
 
     with pytest.raises(TypeError):
-        await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin, end=None)
+        await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin, end=None)
 
     with pytest.raises(TypeError):
-        await get_people_inout(dbinstance, staff_collection, bodyfacename_collection, avai_staff, begin=None, end=None)
+        await get_people_inout(
+            fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin=None, end=None
+        )
