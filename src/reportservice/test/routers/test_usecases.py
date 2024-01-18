@@ -4,7 +4,7 @@ import pytest
 from .test_router_config import generate_conf, true_config
 
 
-def test_create_usecase(testclient, generate_conf, interest, send_to, send_cc):  # noqa: F811
+def test_create_usecase_vt(testclient, generate_conf, interest, send_to, send_cc):  # noqa: F811
     # First create content
     content_payload = json.dumps(
         {
@@ -32,6 +32,63 @@ def test_create_usecase(testclient, generate_conf, interest, send_to, send_cc): 
             "content_id": content_id,
             "description": "report_vt task",
             "name": "report_vt",
+            "timeout": 30,
+            "trigger": {"cron": "* * * * *"},
+        }
+    )
+    response = testclient.post("/task/", data=task_payload)
+    assert response.status_code == 201, response.json()
+    task_id = response.json()["_id"]
+
+    # Get the task
+    response = testclient.get(f"/task/{task_id}")
+    assert response.status_code == 200, response.json()
+    response_data = response.json()
+    assert response_data["job"]["pending"] is False, response_data
+    assert response_data["job"]["running"] is False, response_data
+    assert response_data["job"]["next_run_time"] is None, response_data
+
+    # resume the task
+    response = testclient.get(f"/task/{task_id}/resume")
+    assert response.status_code == 200, response.json()
+    response_data = response.json()
+    assert response_data["job"]["pending"] is False, response_data
+    assert response_data["job"]["running"] is True, response_data
+    assert response_data["job"]["next_run_time"] is not None, response_data
+
+    # run the content now
+    response = testclient.get(f"/content/{content_id}/render_and_send")
+    assert response.status_code == 200, response.json()
+
+
+def test_usecase_gdtt(testclient, generate_conf):  # noqa: F811
+    # First create content
+    content_payload = json.dumps(
+        {
+            "name": "report_gdtt",
+            "description": "report_gdtt content",
+            "to": ["giamdoc@example.com"],
+            "checkin_begin": "2000-01-01 07:00:00",
+            "checkin_duration": "PT2H",
+            "checkout_begin": "2000-01-01 17:00:00",
+            "checkout_duration": "PT2H",
+            "subject_template": "Report for C5 {{year}}",
+            "body_template": "please use {{people_count}}",
+            "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
+            "query_parameters": {"unit": ["C5", "Trung tâm C5"]},
+        }
+    )
+    response = testclient.post("/content/", data=content_payload)
+    assert response.status_code == 201, response.json()
+    content_id = response.json()["_id"]
+
+    # Then create task
+    task_payload = json.dumps(
+        {
+            "actual_sent": True,
+            "content_id": content_id,
+            "description": "report_gdtt task",
+            "name": "report_gdtt",
             "timeout": 30,
             "trigger": {"cron": "* * * * *"},
         }
