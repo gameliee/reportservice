@@ -6,8 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 from jinja2 import Environment, BaseLoader, Template
 from jinja2.exceptions import TemplateSyntaxError
-from ..stat import PersonInoutCollection
-from ..models import QueryParamters, ContentId
+from ..stat import PersonInoutCollection, QueryParamters
 
 
 def validate_jinja(v: str) -> str:

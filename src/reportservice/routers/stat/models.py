@@ -12,8 +12,6 @@ __all__ = [
     "QueryException",
     "PersonInout",
     "PersonInoutCollection",
-    "MongoSampleStateOfStaffModel",
-    "MongoStateOfStaffModel",
 ]
 
 StaffCodeStr = Annotated[str, "staff code"]
@@ -84,13 +82,13 @@ class MongoStaffModel(BaseModel):
 
     model_config = ConfigDict(extra="allow")
     staff_code: StaffCodeStr
-    full_name: Optional[FullNameStr] = Field(None)
-    sex: Optional[str] = Field(None)
-    email: Optional[EmailStr] = Field(None)
-    cellphone: Optional[CellphoneStr] = Field(None)
-    unit: Optional[UnitStr] = Field(None)
-    department: Optional[DepartmentStr] = Field(None)
-    title: Optional[TitleStr] = Field(None)
+    full_name: FullNameStr
+    sex: Optional[str]
+    email: Optional[EmailStr]
+    cellphone: CellphoneStr
+    unit: Optional[UnitStr]
+    department: Optional[DepartmentStr]
+    title: Optional[TitleStr]
     sample_state: MongoSampleStateOfStaffModel
     working_state: MongoStateOfStaffModel
 

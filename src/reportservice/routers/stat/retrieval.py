@@ -1,15 +1,8 @@
-from typing import List, Any
+from typing import List
 from datetime import datetime
-import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
 from .models import QueryParamters, PersonInoutCollection, PersonInout
-from .queries import (
-    pipeline_count,
-    query_find_staff,
-    query_find_staff_inout,
-    pipeline_count_shoulddiemdanh,
-    pipeline_count_has_sample,
-)
+from .queries import pipeline_staffs_inou, pipeline_count
 
 
 async def get_people_count(staff_collection: AsyncIOMotorCollection) -> int:
@@ -81,6 +74,15 @@ async def get_people_inout(
 
     if query_params.is_empty():
         return PersonInoutCollection(count=0, values=[])
+
+    pipeline = pipeline_staffs_inou(
+        query_params,
+        begin,
+        end,
+        threshold=0.0,
+        bodyfacename_collection_name=bodyfacename_collection.name,
+    )
+    cursor = staff_collection.aggregate(pipeline)
 
     # NOTE: need to use two stage query here because the $lookup stage can not use index
     # might be fixed in the future

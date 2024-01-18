@@ -1,12 +1,6 @@
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
-from ..retrieval import (
-    get_people_count,
-    get_inout_count,
-    get_people_inout,
-    get_has_sample_count,
-    get_should_checkinout_count,
-)
+from ..retrieval import get_people_count, get_inout_count, get_people_inout
 from ..models import PersonInout, PersonInoutCollection, QueryParamters
 from ...common import AppConfigModel
 from ...common.conftest import appconfig

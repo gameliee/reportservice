@@ -44,7 +44,7 @@ async def query(
     total_count = await get_inout_count(bodyfacename_collection, day_begin, day_end)
 
     people_inout = await get_people_inout(
-        staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end, logger
+        staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end
     )
 
     should_checkinout_count = await get_should_checkinout_count(staff_collection)

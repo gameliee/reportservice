@@ -1,93 +1,22 @@
 from datetime import datetime
-from .models import QueryParamters, StaffCodeStr, MongoSampleStateOfStaffModel, MongoStateOfStaffModel
+from .models import QueryParamters
 
 
 def query_find_staff(query_params: QueryParamters):
     """find staffs in the database by OR all conditions in `query_params`"""
-    pipline = [
-        {
-            "$match": {
-                "$or": [
-                    {"staff_code": {"$in": query_params.staffcodes}},
-                    {"full_name": {"$in": query_params.fullnames}},
-                    {"unit": {"$in": query_params.units}},
-                    {"department": {"$in": query_params.departments}},
-                    {"title": {"$in": query_params.titles}},
-                    {"email": {"$in": query_params.emails}},
-                    {"cellphone": {"$in": query_params.cellphones}},
-                    {"$expr": {"$or": query_params.custom_queries}},
-                ],
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "straight_img": 0,
-                "left_img": 0,
-                "right_img": 0,
-                "embeddings": 0,
-            },
-        },
-    ]
-    return pipline
-
-
-def query_find_staff_inout(
-    staffcodes: list[StaffCodeStr],
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-    threshold: float = 0.63,
-    has_mask: bool = False,
-):
-    """create a query to find in-out information which related to staffcodes"""
-    pipeline = [
-        {
-            "$match": {
-                "image_time": {
-                    "$gte": begin,
-                    "$lte": end,
-                },
-                "face_reg_score": {
-                    "$gte": threshold,
-                },
-                "has_mask": has_mask,
-                "staff_id": {
-                    "$in": staffcodes,
-                },
-            },
-        },
-        {
-            "$project": {
-                "staff_id": 1,
-                "image_time": 1,
-            },
-        },
-        {
-            "$sort": {
-                "image_time": 1,
-            },
-        },
-        {
-            "$group": {
-                "_id": "$staff_id",
-                "firstDocument": {
-                    "$first": "$image_time",
-                },
-                "lastDocument": {
-                    "$last": "$image_time",
-                },
-            },
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "staff_code": "$_id",
-                "firstDocument": 1,
-                "lastDocument": 1,
-            },
-        },
-    ]
-    return pipeline
+    query = {
+        "$or": [
+            {"staff_code": {"$in": query_params.staffcodes}},
+            {"full_name": {"$in": query_params.fullnames}},
+            {"unit": {"$in": query_params.units}},
+            {"department": {"$in": query_params.departments}},
+            {"title": {"$in": query_params.titles}},
+            {"email": {"$in": query_params.emails}},
+            {"cellphone": {"$in": query_params.cellphones}},
+            {"$expr": {"$or": query_params.custom_queries}},
+        ],
+    }
+    return query
 
 
 def pipeline_staffs_inou(
@@ -113,33 +42,11 @@ def pipeline_staffs_inou(
                 "pipeline": [
                     {
                         "$match": {
-                            "$expr": {
-                                "$and": [
-                                    {
-                                        "$eq": [
-                                            "$staff_id",
-                                            "$$staff_code_var",
-                                        ],
-                                    },
-                                    {
-                                        "$gte": [
-                                            "$image_time",
-                                            begin,
-                                        ],
-                                    },
-                                    {
-                                        "$lte": [
-                                            "$image_time",
-                                            end,
-                                        ],
-                                    },
-                                    {
-                                        "$gte": ["$face_reg_score", threshold],
-                                    },
-                                    {"$eq": ["$has_mask", has_mask]},
-                                ],
-                            },
-                        },
+                            "image_time": {"$gte": begin, "$lte": end},
+                            "face_reg_score": {"$gte": threshold},
+                            "has_mask": has_mask,
+                            "staff_id": "$staff_code",
+                        }
                     },
                     {"$project": {"staff_id": 1, "image_time": 1}},
                     {"$sort": {"image_time": 1}},

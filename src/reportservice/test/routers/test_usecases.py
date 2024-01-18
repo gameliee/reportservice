@@ -4,7 +4,7 @@ import pytest
 from .test_router_config import generate_conf, true_config
 
 
-def test_create_usecase_vt(testclient, generate_conf, interest, send_to, send_cc):  # noqa: F811
+def test_create_usecase(testclient, generate_conf, interest, send_to, send_cc):  # noqa: F811
     # First create content
     content_payload = json.dumps(
         {

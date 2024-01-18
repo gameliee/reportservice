@@ -3,7 +3,8 @@ from io import BytesIO
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
 from ..stat import PersonInoutCollection
 from .models import ExcelColumn, ExcelInvalidException
 

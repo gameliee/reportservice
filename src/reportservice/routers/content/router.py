@@ -7,13 +7,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from .excel import read_excel_validate, ExcelInvalidException, ExcelColumn
 from .models import (
-    ContentModel,
     ContentModelCreate,
+    ContentModel,
     ContentModelRendered,
     ContentModelUpdate,
     ContentQueryResult,
+    QueryParamters,
 )
-from ..models import TaskId, QueryParamters, ContentId
 from .content import render, send, query
 from ..common import DepAppConfig, DepContentCollection, DepTaskCollection
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
