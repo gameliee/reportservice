@@ -2,7 +2,7 @@ from typing import List
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from ..retrieval import get_people_count, get_inout_count, get_people_inout
-from ..models import PersonInout, PersonInoutCollection
+from ..models import PersonInout, PersonInoutCollection, QueryParamters
 from ...common import AppConfigModel
 from ...common.conftest import appconfig
 
@@ -60,23 +60,21 @@ async def test_get_people_inout(fixture_staff_collection, fixture_bodyfacename_c
     begin, end = test_time
 
     # testcase 1: empty staffcodes
-    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, [], begin, end)
+    ret = await get_people_inout(
+        fixture_staff_collection, fixture_bodyfacename_collection, QueryParamters(), begin, end
+    )
     assert isinstance(ret, PersonInoutCollection)
     assert ret.count == 0
     assert len(ret.values) == 0
 
-    # testcase 2: None staffcodes
-    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, None, begin, end)
-    assert isinstance(ret, PersonInoutCollection)
-    assert ret.count == 0
-    assert len(ret.values) == 0
-
-    # testcase 3: True staffcodes
-    ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin, end)
+    # testcase 2: True staffcodes
+    ret = await get_people_inout(
+        fixture_staff_collection, fixture_bodyfacename_collection, QueryParamters(staffcodes=avai_staff), begin, end
+    )
     assert isinstance(ret, PersonInoutCollection)
     assert ret.count == len(avai_staff)
     assert len(ret.values) == len(avai_staff)
-    assert isinstance(ret[0], PersonInout)
+    assert isinstance(ret.values[0], PersonInout)
 
     with pytest.raises(TypeError):
         await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin, end=None)

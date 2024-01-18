@@ -7,7 +7,6 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from ..stat import get_people_inout
 from ..stat import PersonInoutCollection
 from .models import ExcelColumn, ExcelInvalidException
 

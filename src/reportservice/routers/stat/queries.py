@@ -1,19 +1,40 @@
 from typing import List
 from datetime import datetime
-from .models import StaffCodeStr
+from .models import QueryParamters
+
+
+def query_find_staff(query_params: QueryParamters):
+    """find staffs in the database by OR all conditions in `query_params`"""
+    query = {
+        "$or": [
+            {"staff_code": {"$in": query_params.staffcodes}},
+            {"full_name": {"$in": query_params.fullnames}},
+            {"unit": {"$in": query_params.units}},
+            {"department": {"$in": query_params.departments}},
+            {"title": {"$in": query_params.titles}},
+            {"email": {"$in": query_params.emails}},
+            {"cellphone": {"$in": query_params.cellphones}},
+            {"$expr": {"$or": query_params.custom_queries}},
+        ],
+    }
+    return query
 
 
 def pipeline_staffs_inou(
-    staffcodes: List[StaffCodeStr] = [],
+    query_params: QueryParamters,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
     threshold: float = 0.63,
     has_mask: bool = False,
     bodyfacename_collection_name: str = "BodyFaceName",
 ):
-    """get staffs min and max recognition time within the windows [begin, end]"""
+    """get staffs min and max recognition time within the windows [begin, end]
+    All the parameters are optional and will be OR combined.
+    """
     query = [
-        {"$match": {"staff_code": {"$in": staffcodes}}},
+        {
+            "$match": query_find_staff(query_params),
+        },
         {
             "$lookup": {
                 "from": bodyfacename_collection_name,
@@ -26,7 +47,7 @@ def pipeline_staffs_inou(
                             "image_time": {"$gte": begin, "$lte": end},
                             "face_reg_score": {"$gte": threshold},
                             "has_mask": has_mask,
-                            "staff_id": {"$in": staffcodes},
+                            "staff_id": "$staff_code",
                         }
                     },
                     {"$project": {"staff_id": 1, "image_time": 1}},

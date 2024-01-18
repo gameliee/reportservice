@@ -6,7 +6,14 @@ from pymongo.results import UpdateResult
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from .excel import read_excel_validate, ExcelInvalidException, ExcelColumn
-from .models import ContentModelCreate, ContentModel, ContentModelRendered, ContentModelUpdate, ContentQueryResult
+from .models import (
+    ContentModelCreate,
+    ContentModel,
+    ContentModelRendered,
+    ContentModelUpdate,
+    ContentQueryResult,
+    QueryParamters,
+)
 from .content import render, send, query
 from ..common import DepAppConfig, DepContentCollection, DepTaskCollection
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
@@ -71,8 +78,12 @@ async def upload_excel(collection: DepContentCollection, id, excelfile: UploadFi
 
     new_staff_codes = df[ExcelColumn.ESTAFF].dropna().tolist()
 
+    new_query_parameteres = QueryParamters(staffcodes=new_staff_codes)
+
     base64_str = b64encode(excel).decode("utf-8")
-    result = await collection.update_one({"_id": id}, {"$set": {"excel": base64_str, "staff_codes": new_staff_codes}})
+    result = await collection.update_one(
+        {"_id": id}, {"$set": {"excel": base64_str, "query_parameters": new_query_parameteres.model_dump()}}
+    )
 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail=f"Content {id} not found")

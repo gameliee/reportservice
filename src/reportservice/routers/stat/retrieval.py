@@ -1,8 +1,7 @@
 from typing import List
-from datetime import datetime, timezone
-from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
-from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
-from .models import StaffCodeStr, PersonInoutCollection, PersonInout
+from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorCollection
+from .models import QueryParamters, PersonInoutCollection, PersonInout
 from .queries import pipeline_staffs_inou, pipeline_count
 
 
@@ -48,7 +47,7 @@ async def get_inout_count(
 async def get_people_inout(
     staff_collection: AsyncIOMotorCollection,
     bodyfacename_collection: AsyncIOMotorCollection,
-    staffcodes: List[StaffCodeStr],
+    query_params: QueryParamters,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> PersonInoutCollection:
@@ -61,13 +60,16 @@ async def get_people_inout(
         begin = datetime.fromisoformat(begin)
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
-    if not isinstance(staffcodes, List):
-        return []
-    if len(staffcodes) == 0:
-        return []
+
+    if query_params.is_empty():
+        return PersonInoutCollection(count=0, values=[])
 
     pipeline = pipeline_staffs_inou(
-        staffcodes, begin, end, threshold=0.0, bodyfacename_collection_name=bodyfacename_collection.name
+        query_params,
+        begin,
+        end,
+        threshold=0.0,
+        bodyfacename_collection_name=bodyfacename_collection.name,
     )
     cursor = staff_collection.aggregate(pipeline)
 

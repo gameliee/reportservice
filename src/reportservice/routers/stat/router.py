@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from ..common import DepAppConfig, DepMongoCLient
 from ..common import DepStaffCollection, DepBodyFaceNameCollection
 from .retrieval import get_inout_count, get_people_count, get_people_inout
-from .models import StaffCodeStr, PersonInoutCollection
+from .models import QueryParamters, PersonInoutCollection
 
 
 router = APIRouter()
@@ -33,14 +33,14 @@ async def api_get_people_count(
 async def api_get_people_inout(
     staff_collection: DepStaffCollection,
     bodyfacename_collection: DepBodyFaceNameCollection,
-    staffcodes: List[StaffCodeStr] = Body(...),
+    query_params: QueryParamters = Body(...),
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> PersonInoutCollection:
     peopleinout = await get_people_inout(
         staff_collection,
         bodyfacename_collection,
-        staffcodes=staffcodes,
+        query_params=query_params,
         begin=begin,
         end=end,
     )

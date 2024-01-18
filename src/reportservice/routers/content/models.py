@@ -10,9 +10,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 from jinja2 import Environment, BaseLoader, Template
 from jinja2.exceptions import TemplateSyntaxError
-from ..stat import PersonInoutCollection
-
-StaffCodeStr = Annotated[str, "staff code"]
+from ..stat import PersonInoutCollection, QueryParamters
 
 
 def validate_jinja(v: str) -> str:
@@ -24,6 +22,7 @@ def validate_jinja(v: str) -> str:
 
 
 JinjaStr = Annotated[str, AfterValidator(validate_jinja)]
+ExcelAsStr = Annotated[str, "excel file in base64 string"]
 
 
 class ContentModelBase(BaseModel):
@@ -45,7 +44,10 @@ class ContentModelBase(BaseModel):
     checkin_duration: timedelta = Field("PT3H", description="ISO 8601 format for timedelta")
     checkout_begin: datetime = Field(description="only the time part is interested, not the date part")
     checkout_duration: timedelta = Field("PT3H", description="ISO 8601 format for timedelta")
-    staff_codes: List[str] = Field([], description="staff codes to be included in the report")
+    query_parameters: Optional[QueryParamters] = Field(
+        None,
+        description="query parameters for the report. If excel file present, the query parameters will be overrided.",
+    )
 
     def get_subject_template(self) -> Template:
         return Environment(loader=BaseLoader).from_string(self.subject_template)
@@ -58,10 +60,10 @@ class ContentModelBase(BaseModel):
 
 
 class ContentModel(ContentModelBase):
-    excel: str = Field("", description="excel file in base64 string")
+    excel: Optional[ExcelAsStr] = Field(None)
 
     def is_excel_uploaded(self):
-        return self.excel != ""
+        return self.excel is not None
 
 
 class ContentModelCreate(ContentModelBase):

@@ -38,7 +38,7 @@ async def query(
     )  # BUG: this is not correct, change to begin of the day to end of the day
 
     people_inout = await get_people_inout(
-        staff_collection, bodyfacename_collection, content.staff_codes, day_begin, day_end
+        staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end
     )
 
     return ContentQueryResult(

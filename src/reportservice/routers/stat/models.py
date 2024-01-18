@@ -1,10 +1,61 @@
 """data models"""
 from enum import Enum
+from bson import json_util
+import json
 from typing import Annotated, Optional
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.functional_validators import AfterValidator
+
+__all__ = [
+    "QueryParamters",
+    "QueryException",
+    "PersonInout",
+    "PersonInoutCollection",
+]
 
 StaffCodeStr = Annotated[str, "staff code"]
+FullNameStr = Annotated[str, "full name"]
+UnitStr = Annotated[str, "unit name"]
+DepartmentStr = Annotated[str, "department name"]
+TitleStr = Annotated[str, "title name"]
+EmailStr = Annotated[str, "email address"]
+CellphoneStr = Annotated[str, "cellphone number"]
+
+
+def validate_query(query_string):
+    # Attempt to parse the query string into a Python dictionary
+    json.loads(query_string, object_hook=json_util.object_hook)
+    return query_string
+
+
+MongoQueryStr = Annotated[str, "mongo query string", AfterValidator(validate_query)]
+
+
+class QueryParamters(BaseModel):
+    """These parameters should be OR together"""
+
+    staffcodes: list[StaffCodeStr] = []
+    fullnames: list[FullNameStr] = []
+    units: list[UnitStr] = []
+    departments: list[DepartmentStr] = []
+    titles: list[TitleStr] = []
+    emails: list[EmailStr] = []
+    cellphones: list[CellphoneStr] = []
+    custom_queries: list[MongoQueryStr] = []
+
+    def is_empty(self):
+        return (
+            len(self.staffcodes)
+            + len(self.fullnames)
+            + len(self.units)
+            + len(self.departments)
+            + len(self.titles)
+            + len(self.emails)
+            + len(self.cellphones)
+            + len(self.custom_queries)
+            == 0
+        )
 
 
 class QueryException(Exception):
@@ -31,13 +82,13 @@ class MongoStaffModel(BaseModel):
 
     model_config = ConfigDict(extra="allow")
     staff_code: StaffCodeStr
-    full_name: str
+    full_name: FullNameStr
     sex: Optional[str]
-    email: Optional[str]
-    cellphone: str
-    unit: Optional[str]
-    department: Optional[str]
-    title: Optional[str]
+    email: Optional[EmailStr]
+    cellphone: CellphoneStr
+    unit: Optional[UnitStr]
+    department: Optional[DepartmentStr]
+    title: Optional[TitleStr]
     sample_state: MongoSampleStateOfStaffModel
     working_state: MongoStateOfStaffModel
 

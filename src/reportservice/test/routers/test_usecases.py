@@ -1,19 +1,10 @@
 """test the usecase send report to VT"""
 import json
 import pytest
+from .test_router_config import generate_conf, true_config
 
 
-@pytest.fixture
-def ensure_config(testclient, collectionconfig, smtpconfig):
-    response = testclient.get("/config/")
-    if response.status_code == 404:
-        true_config = {"faceiddb": collectionconfig, "smtp": smtpconfig}
-        payload = json.dumps(true_config)
-        response = testclient.post("/config/", data=payload)
-        assert response.status_code == 201
-
-
-def test_create_usecase(testclient, ensure_config, interest, send_to, send_cc):
+def test_create_usecase(testclient, generate_conf, interest, send_to, send_cc):  # noqa: F811
     # First create content
     content_payload = json.dumps(
         {
@@ -27,7 +18,7 @@ def test_create_usecase(testclient, ensure_config, interest, send_to, send_cc):
             "subject_template": "please use {{year}}",
             "body_template": "please use {{people_count}}",
             "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
-            "staff_codes": interest,
+            "query_parameters": {"staffcodes": interest},
         }
     )
     response = testclient.post("/content/", data=content_payload)
@@ -72,12 +63,12 @@ def test_create_usecase(testclient, ensure_config, interest, send_to, send_cc):
 
 @pytest.fixture
 def send_to():
-    return ["hadtt30@vtx.viettel.vn"]
+    return ["hadtt30@example.com"]
 
 
 @pytest.fixture
 def send_cc():
-    return ["tramnn3@vtx.viettel.vn", "tcld_anhvhp@vtx.viettel.vn"]
+    return ["tramnn3@example.com", "tcld_anhvhp@example.com"]
 
 
 @pytest.fixture
