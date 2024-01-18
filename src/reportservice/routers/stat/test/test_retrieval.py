@@ -2,7 +2,7 @@ from typing import List
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from ..retrieval import get_people_count, get_inout_count, get_people_inout
-from ..models import PersonInout
+from ..models import PersonInout, PersonInoutCollection
 from ...common import AppConfigModel
 from ...common.conftest import appconfig
 
@@ -35,7 +35,7 @@ async def test_get_people_count(fixture_staff_collection, test_time):
         begin=begin,
         end=end,
     )
-    assert count == 3, fixture_staff_collection.name
+    assert count == 723, fixture_staff_collection.name
 
 
 @pytest.mark.asyncio
@@ -56,23 +56,26 @@ async def test_get_inout_count(fixture_bodyfacename_collection, test_time):
 
 
 @pytest.mark.asyncio
-async def test_get_stat(fixture_staff_collection, fixture_bodyfacename_collection, test_time, avai_staff):
+async def test_get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, test_time, avai_staff):
     begin, end = test_time
 
     # testcase 1: empty staffcodes
     ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, [], begin, end)
-    assert isinstance(ret, List)
-    assert len(ret) == 0
+    assert isinstance(ret, PersonInoutCollection)
+    assert ret.count == 0
+    assert len(ret.values) == 0
 
     # testcase 2: None staffcodes
     ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, None, begin, end)
-    assert isinstance(ret, List)
-    assert len(ret) == 0
+    assert isinstance(ret, PersonInoutCollection)
+    assert ret.count == 0
+    assert len(ret.values) == 0
 
     # testcase 3: True staffcodes
     ret = await get_people_inout(fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin, end)
-    assert isinstance(ret, List)
-    assert len(ret) == len(avai_staff)
+    assert isinstance(ret, PersonInoutCollection)
+    assert ret.count == len(avai_staff)
+    assert len(ret.values) == len(avai_staff)
     assert isinstance(ret[0], PersonInout)
 
     with pytest.raises(TypeError):

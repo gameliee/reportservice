@@ -18,6 +18,7 @@ class FaceIDDBConfigModel(BaseSettings):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
+                "database": "FaceID",
                 "staff_collection": "staffs",
                 "face_collection": "BodyFaceName",
             }

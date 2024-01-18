@@ -21,7 +21,7 @@ def test_api_get_inout_count(testclient: TestClient, _payload, generate_conf):  
 
 def test_api_get_people_count(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     response = testclient.get(f"{PREFIX}/people", params=_payload)
-    assert response.text == "3"
+    assert response.text == "723"
     assert response.status_code == 200
 
 

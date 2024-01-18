@@ -2,7 +2,7 @@ from typing import List
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
-from .models import StaffCodeStr, QueryException, PersonInout
+from .models import StaffCodeStr, PersonInoutCollection, PersonInout
 from .queries import pipeline_staffs_inou, pipeline_count
 
 
@@ -51,29 +51,11 @@ async def get_people_inout(
     staffcodes: List[StaffCodeStr],
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> List[PersonInout]:
-    """give a list of staffcode, return a dataframe which contains following columns:
-    - staffcode
-    - first recognition time
-    - last recognition time
-    - has_sample
-
-    If a staffcode is not exists in the database, the result will not contains it.
-
-    Please note that the order in result might not be the same as the order of `staffcodes`
-
-
-    Args:
-        collection (AsyncIOMotorCollection): database collection
-        staffcodes (List[StaffCodeStr]): just a list of interested staffcode
-        begin (datetime): begin of the query window. Defaults to "2023-12-27T00:00:00.000+00:00".
-        end (datetime): end of the query window. Defaults to "2023-12-27T23:59:59.999+00:00".
-
-    Raises:
-        NotImplementedError: _description_
-
-    Returns:
-        pd.DataFrame: if any of arguments is invalid, return an empty dataframe
+) -> PersonInoutCollection:
+    """
+    query the first and last recognition time of each staffcode in the database
+    Please note that the order in result might not be the same as the order of `staffcodes`.
+    The length of result should be the same as the length of `staffcodes`.
     """
     if not isinstance(begin, datetime):
         begin = datetime.fromisoformat(begin)
@@ -94,4 +76,4 @@ async def get_people_inout(
         personinout = PersonInout.model_validate(document)
         ret.append(personinout)
 
-    return ret
+    return PersonInoutCollection(count=len(ret), values=ret)

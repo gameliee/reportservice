@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 from jinja2 import Environment, BaseLoader, Template
 from jinja2.exceptions import TemplateSyntaxError
-from ..stat import PersonInout
+from ..stat import PersonInoutCollection
 
 StaffCodeStr = Annotated[str, "staff code"]
 
@@ -113,7 +113,7 @@ class ContentQueryResult(BaseModel):
     checkin_count: int
     checkout_count: int
     total_count: int
-    people_inout: List[PersonInout]
+    people_inout: PersonInoutCollection
 
 
 class ContentModelRendered(BaseModel):

@@ -47,11 +47,14 @@ def pipeline_staffs_inou(
                 "_id": 0,
                 "staff_code": "$staff_code",  # fixed field name, do not change it
                 "full_name": 1,  # fixed field name, do not change it
+                "sex": 1,
+                "cellphone": 1,
                 "email": 1,
                 "unit": 1,
                 "department": 1,
                 "title": 1,
-                "state": "$state",  # fixed field name, do not change it
+                "sample_state": 1,
+                "working_state": 1,
                 "first_record": "$found.firstDocument",  # fixed field name, do not change it
                 "last_record": "$found.lastDocument",  # fixed field name, do not change it
             }

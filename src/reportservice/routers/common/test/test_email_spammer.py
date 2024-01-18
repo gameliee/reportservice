@@ -1,5 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
+from smtplib import SMTPRecipientsRefused
 from ..email_spammer import EmailSpammer
 
 
@@ -44,7 +45,7 @@ def test_simple_multiple(spammerwithlove):
 def test_simple_multiple_with_cc_bcc(spammerwithlove):
     spammerwithlove.send(
         to="lazada@lazada.com,shopee@shopee.com",
-        cc="vietnameairline@vietnameairfine@.com,a@a.com",
+        cc="vietnameairline@domain.com,a@a.com",
         bcc="example@example.com,ok@ok.org",
         subject="test_simple_multiple_with_cc_bcc",
         body="this is the body",
@@ -54,7 +55,7 @@ def test_simple_multiple_with_cc_bcc(spammerwithlove):
 def test_with_attachment_file(spammerwithlove, excelfile):
     spammerwithlove.send(
         to="lazada@lazada.com,shopee@shopee.com",
-        cc="vietnameairline@vietnameairfine@.com,a@a.com",
+        cc="vietnameairline@domain.com,a@a.com",
         bcc="example@example.com,ok@ok.org",
         subject="test_with_attachment_file",
         body="this is the body",
@@ -65,10 +66,19 @@ def test_with_attachment_file(spammerwithlove, excelfile):
 def test_with_attachment_rawdata(spammerwithlove, excelbytes):
     spammerwithlove.send(
         to="lazada@lazada.com,shopee@shopee.com",
-        cc="vietnameairline@vietnameairfine@.com,a@a.com",
+        cc="vietnameairline@domain.com,a@a.com",
         bcc="example@example.com,ok@ok.org",
         subject="test_with_attachment_rawdata",
         body="this is the body",
         attachment_filename="testing.xlsx",
         attachment_data=excelbytes,
     )
+
+
+def test_send_nothing(spammerwithlove):
+    with pytest.raises(SMTPRecipientsRefused):
+        spammerwithlove.send(to="", subject="test_simple", body="this is the body")
+
+
+def test_send_wrong_address(spammerwithlove):
+    spammerwithlove.send(to="[totheworld]", subject="test_simple", body="this is the body")

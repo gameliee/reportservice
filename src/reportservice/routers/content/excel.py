@@ -8,7 +8,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..stat import get_people_inout
-from ..stat import PersonInout
+from ..stat import PersonInoutCollection
 from .models import ExcelColumn, ExcelInvalidException
 
 
@@ -102,7 +102,7 @@ def excel_to_html(excelbytes: bytes) -> str:
 
 
 def fill_personinout_to_excel(
-    people_inout: List[PersonInout],
+    people_inout: PersonInoutCollection,
     excelbytes: bytes,
 ) -> bytes:
     """Fill excel file with PersonInout
@@ -113,7 +113,7 @@ def fill_personinout_to_excel(
     - has_sample
 
     Args:
-        people_inout (List[PersonInout]): the data to fill into excel file
+        people_inout (PersonInoutCollection): the data to fill into excel file
         excelbytes (bytes): bytestream of the excel file. Can be provide as
         ```
         with open('example.xlsx', 'rb') as f:
@@ -125,10 +125,10 @@ def fill_personinout_to_excel(
     """
     origin_df = read_excel_validate(excelbytes)
 
-    if len(people_inout) == 0:
+    if people_inout.count == 0:
         return excelbytes
 
-    result_df = pd.DataFrame(people_inout)
+    result_df = pd.DataFrame(people_inout.values)
     # TODO: ensure column name
     result_df.rename(
         columns={
