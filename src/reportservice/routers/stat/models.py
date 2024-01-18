@@ -78,24 +78,24 @@ class MongoStateOfStaffModel(str, Enum):
 
 
 class MongoStaffModel(BaseModel):
-    """Copy from ResponseData_StaffModelInResponse"""
+    """Reflect from ResponseData_StaffModelInResponse"""
 
     model_config = ConfigDict(extra="allow")
     staff_code: StaffCodeStr
-    full_name: FullNameStr
-    sex: Optional[str]
-    email: Optional[EmailStr]
-    cellphone: CellphoneStr
-    unit: Optional[UnitStr]
-    department: Optional[DepartmentStr]
-    title: Optional[TitleStr]
+    full_name: Optional[FullNameStr] = Field(None)
+    sex: Optional[str] = Field(None)
+    email: Optional[EmailStr] = Field(None)
+    cellphone: Optional[CellphoneStr] = Field(None)
+    unit: Optional[UnitStr] = Field(None)
+    department: Optional[DepartmentStr] = Field(None)
+    title: Optional[TitleStr] = Field(None)
     sample_state: MongoSampleStateOfStaffModel
     working_state: MongoStateOfStaffModel
 
 
 class MongoInOutModel(BaseModel):
-    first_record: Optional[datetime] = Field(None, alias="first record in the database")
-    last_record: Optional[datetime] = Field(None, alias="last record in the database")
+    first_record: Optional[datetime] = Field(None, description="first record in the database")
+    last_record: Optional[datetime] = Field(None, description="last record in the database")
 
 
 class PersonInout(MongoStaffModel, MongoInOutModel):

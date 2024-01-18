@@ -1,8 +1,8 @@
 import pandas as pd
 from datetime import datetime
 import pytest
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from ..excel import read_excel_validate, fill_excel, fill_personinout_to_excel
+from ...stat import PersonInoutCollection, PersonInout
+from ..excel import read_excel_validate, fill_excel, fill_personinout_to_excel, convert_personinout_to_excel
 
 
 def test_input_validate(excelbytes):
@@ -47,3 +47,43 @@ def test_fill_excel1(excelbytes):
 def test_fill_personinout_to_excel(excelbytes):
     fill_personinout_to_excel(excelbytes, [])
     pass
+
+
+def test_convert_personinout_to_excel():
+    inout = PersonInoutCollection(
+        count=4,
+        values=[
+            PersonInout(
+                staff_code="206424",
+                sample_state="ready_to_checkin_checkout",
+                first_record=datetime(2021, 1, 1),
+                last_record=datetime(2021, 1, 1),
+                working_state="zombie",
+            ),
+            PersonInout(
+                staff_code="220560",
+                sample_state="ready_to_checkin_checkout",
+                first_record=datetime(2021, 1, 1),
+                last_record=datetime(2021, 1, 1),
+                working_state="zombie",
+            ),
+            PersonInout(
+                staff_code="207745",
+                sample_state="ready_to_checkin_checkout",
+                first_record=datetime(2021, 1, 1),
+                last_record=datetime(2021, 1, 1),
+                working_state="zombie",
+            ),
+            PersonInout(
+                staff_code="250753",
+                sample_state="ready_to_checkin_checkout",
+                first_record=datetime(2021, 1, 1),
+                last_record=datetime(2021, 1, 1),
+                working_state="zombie",
+            ),
+        ],
+    )
+
+    outbytes = convert_personinout_to_excel(inout)
+    with open("convert.xlsx", "wb") as f:
+        f.write(outbytes)

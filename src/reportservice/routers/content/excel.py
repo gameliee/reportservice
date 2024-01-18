@@ -1,12 +1,9 @@
 """read, valid excel files"""
 from io import BytesIO
-from typing import List
 import pandas as pd
-from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-from motor.motor_asyncio import AsyncIOMotorDatabase
-
+from fastapi.encoders import jsonable_encoder
 from ..stat import PersonInoutCollection
 from .models import ExcelColumn, ExcelInvalidException
 
@@ -134,7 +131,7 @@ def fill_personinout_to_excel(
             "staff_code": ExcelColumn.ESTAFF,
             "first_record": ExcelColumn.EFIRST,
             "last_record": ExcelColumn.ELASTT,
-            "state": ExcelColumn.ESAMPL,
+            "sample_state": ExcelColumn.ESAMPL,
         }
     )
 
@@ -148,3 +145,68 @@ def fill_personinout_to_excel(
 
     outbytes = fill_excel(excelbytes, df)
     return outbytes
+
+
+def convert_personinout_to_excel(
+    people_inout: PersonInoutCollection,
+) -> bytes:
+    result_df = pd.DataFrame(jsonable_encoder(people_inout.values))
+    result_df.fillna("", inplace=True)
+    result_df.rename(
+        columns={
+            "staff_code": ExcelColumn.ESTAFF,
+            "first_record": ExcelColumn.EFIRST,
+            "last_record": ExcelColumn.ELASTT,
+            "sample_state": ExcelColumn.ESAMPL,
+        },
+        inplace=True,
+    )
+
+    # Sort by custom rules
+    sort_by = []
+    if "unit" in result_df.columns:
+        result_df["unit_sort"] = result_df["unit"].str.lower().apply(lambda x: "0" + x if "giám đốc" in x else x)
+        sort_by.append("unit_sort")
+
+    if "department" in result_df.columns:
+        result_df["department_sort"] = result_df["department"].str.lower()
+        sort_by.append("department_sort")
+
+    if "title" in result_df.columns:
+
+        def _sort_title(x):
+            if x.startswith("chánh"):
+                return "0" + x
+            elif x.startswith("trưởng"):
+                return "1" + x
+            elif x.startswith("phó"):
+                return "2" + x
+            else:
+                return x
+
+        result_df["title_sort"] = result_df["title"].str.lower().apply(_sort_title)
+        sort_by.append("title_sort")
+
+    result_df.sort_values(by=sort_by + [ExcelColumn.ESTAFF], inplace=True)
+    # drop sort columns
+    result_df.drop(columns=sort_by, inplace=True)
+
+    # create index column
+    result_df.index.name = "STT"
+    result_df.index.name = "STT"
+    result_df.reset_index(inplace=True)
+
+    # reorder the columns. First columns should be STT, staffcode, first, last, sample. And then the rest
+    columns = result_df.columns.tolist()
+    columns.remove("STT")
+    columns.remove(ExcelColumn.ESTAFF)
+    columns.remove(ExcelColumn.EFIRST)
+    columns.remove(ExcelColumn.ELASTT)
+    columns.remove(ExcelColumn.ESAMPL)
+    columns = ["STT", ExcelColumn.ESTAFF, ExcelColumn.EFIRST, ExcelColumn.ELASTT, ExcelColumn.ESAMPL] + columns
+    result_df = result_df[columns]
+
+    # convert to excel
+    virtual_workbook = BytesIO()
+    result_df.to_excel(virtual_workbook, index=False)
+    return virtual_workbook.getvalue()
