@@ -80,6 +80,7 @@ class ContentModelCreate(ContentModelBase):
                 "subject_template": "please use {{year}}",
                 "body_template": "please use {{people_count}}",
                 "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
+                "query_parameters": {"units": ["C5"]},
             }
         }
     )

@@ -3,7 +3,7 @@ from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorCollection
 from ..stat import get_people_count, get_inout_count, get_has_sample_count, get_people_inout
 from ..common import EmailSpammer
-from .excel import fill_personinout_to_excel, excel_to_html
+from .excel import fill_personinout_to_excel, excel_to_html, convert_personinout_to_excel
 from .models import ContentModel, ContentModelRendered, ContentQueryResult
 
 
@@ -80,6 +80,10 @@ async def render(
     fill_excel_bytes = None
     if content.is_excel_uploaded():
         fill_excel_bytes = fill_personinout_to_excel(query_result.people_inout, excel_bytes)
+        html = excel_to_html(fill_excel_bytes)
+        data["table"] = html
+    else:
+        fill_excel_bytes = convert_personinout_to_excel(query_result.people_inout)
         html = excel_to_html(fill_excel_bytes)
         data["table"] = html
 
