@@ -150,6 +150,15 @@ def fill_personinout_to_excel(
 def convert_personinout_to_excel(
     people_inout: PersonInoutCollection,
 ) -> bytes:
+    if people_inout.count == 0:
+        # create empty df with columns from ExcelColumn
+        empty_df = pd.DataFrame(
+            columns=[ExcelColumn.ESTAFF, ExcelColumn.EFIRST, ExcelColumn.ELASTT, ExcelColumn.ESAMPL]
+        )
+        # convert to excel
+        virtual_workbook = BytesIO()
+        empty_df.to_excel(virtual_workbook, index=False)
+        return virtual_workbook.getvalue()
     result_df = pd.DataFrame(jsonable_encoder(people_inout.values))
     result_df.fillna("", inplace=True)
     result_df.rename(
