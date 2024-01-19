@@ -79,7 +79,7 @@ async def create_task(
 
     jobid = str(task.job_id)
 
-    job: Job = scheduler.add_job(render_and_send_today, trigger, [content.id, app_setting], id=jobid)
+    job: Job = scheduler.add_job(render_and_send_today, trigger, [content.id, app_setting, _trigger.timeout], id=jobid)
     assert not job.pending
     job.pause()  # always pause after create
 
