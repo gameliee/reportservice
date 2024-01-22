@@ -124,7 +124,7 @@ def fill_personinout_to_excel(
     if people_inout.count == 0:
         return excelbytes
 
-    result_df = pd.DataFrame(people_inout.values)
+    result_df = pd.DataFrame(jsonable_encoder(people_inout.values))
     # TODO: ensure column name
     result_df.rename(
         columns={
@@ -132,7 +132,8 @@ def fill_personinout_to_excel(
             "first_record": ExcelColumn.EFIRST,
             "last_record": ExcelColumn.ELASTT,
             "sample_state": ExcelColumn.ESAMPL,
-        }
+        },
+        inplace=True,
     )
 
     # Update the null elements from result_df into origin_df

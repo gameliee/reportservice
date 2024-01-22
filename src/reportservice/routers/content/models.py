@@ -115,6 +115,7 @@ class ContentQueryResult(BaseModel):
     people_count: int
     checkin_count: int
     checkout_count: int
+    should_checkinout_count: int  # old name is should_diemdanh
     total_count: int
     people_inout: PersonInoutCollection
 

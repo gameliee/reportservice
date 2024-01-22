@@ -1,7 +1,13 @@
 from base64 import b64encode, b64decode
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorCollection
-from ..stat import get_people_count, get_inout_count, get_has_sample_count, get_people_inout
+from ..stat import (
+    get_people_count,
+    get_inout_count,
+    get_has_sample_count,
+    get_people_inout,
+    get_should_checkinout_count,
+)
 from ..common import EmailSpammer
 from .excel import fill_personinout_to_excel, excel_to_html, convert_personinout_to_excel
 from .models import ContentModel, ContentModelRendered, ContentQueryResult
@@ -41,6 +47,8 @@ async def query(
         staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end
     )
 
+    should_checkinout_count = await get_should_checkinout_count(staff_collection, day_begin, day_end)
+
     return ContentQueryResult(
         query_time=query_date,
         people_count=people_count,
@@ -48,6 +56,7 @@ async def query(
         checkout_count=checkout_count,
         total_count=total_count,
         people_inout=people_inout,
+        should_checkinout_count=should_checkinout_count,
     )
 
 
@@ -68,6 +77,7 @@ async def render(
         "weekday_Vn": get_weekday_Vn(query_result.query_time),
         "people_count": query_result.people_count,
         # "has_sample_count": query_result.has
+        "should_checkinout_count": query_result.should_checkinout_count,
         "checkin_count": query_result.checkin_count,
         "checkout_count": query_result.checkout_count,
         "total_count": query_result.total_count,
