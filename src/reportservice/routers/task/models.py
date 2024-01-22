@@ -37,6 +37,7 @@ class TriggerModelType(str, Enum):
 
 class TriggerModelBase(BaseModel, ABC):
     jitter: Optional[NonNegativeInt] = Field(None, description="jitter")
+    timeout: Optional[NonNegativeInt] = Field(60, description="timeout in seconds")
 
 
 class CronTriggerModel(TriggerModelBase):

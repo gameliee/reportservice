@@ -47,14 +47,11 @@ async def api_get_config(_config: DepAppConfig):
 
 
 @router.put("/", response_model=AppConfigModel)
-async def update_config(collection: DepConfigCollection, config: AppConfigModelUpdate = Body(...)):
-    latest = await collection.find_one()
-    if not latest:
-        raise HTTPException(status_code=404, detail="No settings found")
-    id = latest.pop("_id")
-    latest = AppConfigModel.model_validate(latest)
+async def update_config(
+    collection: DepConfigCollection, oldconfig: DepAppConfig, config: AppConfigModelUpdate = Body(...)
+):
+    latest = oldconfig
     latest.update(config)
-
     await validate_config(AppConfigModel.model_validate(latest))
 
     # turn to something like "smtp.username": "hola"
@@ -70,14 +67,14 @@ async def update_config(collection: DepConfigCollection, config: AppConfigModelU
         existing_settings.pop("_id")
         return existing_settings
 
-    raise HTTPException(status_code=404, detail="No settings found")
+    raise HTTPException(status_code=404, detail="No config found")
 
 
 @router.delete("/")
 async def delete_config(collection: DepConfigCollection):
     config = await collection.find_one()
     if not config:
-        raise HTTPException(status_code=404, detail="No settings found")
+        raise HTTPException(status_code=404, detail="No config found")
 
     id = config.pop("_id")
     config = AppConfigModel.model_validate(config)
