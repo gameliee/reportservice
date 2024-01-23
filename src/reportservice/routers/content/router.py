@@ -197,7 +197,7 @@ async def render_and_send(
     staff_collection: DepStaffCollection,
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
-    spammer: DepEmailSpammer,
+    spammer_getter: DepEmailSpammer,
     id: str,
     render_date: Optional[datetime] = None,
 ):
@@ -208,7 +208,7 @@ async def render_and_send(
         content_collection, app_config, staff_collection, bodyfacename_collection, logger, id, render_date
     )
 
+    spammer = spammer_getter()
     ret = await send(text, spammer)
-
     logger.info(ret, extra={"id": id})
     return ret

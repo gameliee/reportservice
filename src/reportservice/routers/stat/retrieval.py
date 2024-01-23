@@ -29,6 +29,8 @@ async def get_should_checkinout_count(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
+    return -1
+    # FIXME: implement this
     raise NotImplementedError("should_diemdanh is not implemented")
 
 
