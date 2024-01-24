@@ -80,7 +80,7 @@ def test_update_conf4(testclient: TestClient, generate_conf, collectionconfig):
     assert response.status_code == 200, response.json()
 
 
-def test_update_conf5(testclient: TestClient):
+def test_update_conf5(testclient: TestClient, generate_conf):
     """update nothing"""
     payload = json.dumps({})
     response = testclient.put(f"{PREFIX}/", data=payload)

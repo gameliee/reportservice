@@ -28,16 +28,16 @@ async def validate_config(config: AppConfigModel) -> bool:
 
 
 @router.post("/", response_model=AppConfigModel)
-async def create_config(collection: DepConfigCollection, setting: AppConfigModel = Body(...)):
+async def create_config(collection: DepConfigCollection, config: AppConfigModel = Body(...)):
     latest = await collection.find_one()
     if latest is not None:
         raise HTTPException(status_code=303, detail="already have settings, please use PUT or DELETE")
 
-    await validate_config(setting)
-    setting = jsonable_encoder(setting)
-    new_setting = await collection.insert_one(setting)
+    await validate_config(config)
+    config_json = jsonable_encoder(config)
+    new_setting = await collection.insert_one(config_json)
     created_setting = await collection.find_one({"_id": new_setting.inserted_id})
-    created_setting.pop("_id")
+    # created_setting.pop("_id")
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_setting)
 
 
@@ -50,6 +50,7 @@ async def api_get_config(_config: DepAppConfig):
 async def update_config(
     collection: DepConfigCollection, oldconfig: DepAppConfig, config: AppConfigModelUpdate = Body(...)
 ):
+    id = oldconfig.id
     latest = oldconfig
     latest.update(config)
     await validate_config(AppConfigModel.model_validate(latest))

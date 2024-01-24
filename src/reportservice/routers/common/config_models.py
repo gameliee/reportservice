@@ -85,7 +85,7 @@ class AppConfigModelUpdate(BaseSettings):
 
 
 class AppConfigModel(BaseSettings):
-    _id: str = PrivateAttr(FIXID)
+    id: str = Field(FIXID, alias="_id", frozen=True, description="the config id in the database, never change me")
     faceiddb: FaceIDDBConfigModel
     smtp: SmtpConfigsModel
     model_config = ConfigDict(populate_by_name=True)
