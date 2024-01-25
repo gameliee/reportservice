@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum
-from typing import Optional, List, Literal, Any, Union
+from typing import Optional, List, Literal, Union, Annotated
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pydantic import (
@@ -70,11 +70,12 @@ class DateTriggerModel(TriggerModelBase):
 
 
 TriggerModel = Union[CronTriggerModel, IntervalTriggerModel, DateTriggerModel]
+TaskId = Annotated[str, "task_id"]
 
 
 class TaskModelBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    id: str = Field(
+    id: TaskId = Field(
         default_factory=uuid.uuid4,
         alias="_id",
         frozen=True,

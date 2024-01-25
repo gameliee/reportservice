@@ -19,6 +19,7 @@ from .models import (
     CronTriggerModel,
     IntervalTriggerModel,
     DateTriggerModel,
+    TaskId,
 )
 from ..common import DepTaskCollection, DepSCheduler, DepContentCollection, DepAppSettings
 
@@ -110,7 +111,7 @@ async def list_tasks(
 
 @router.get("/{id}", response_description="Get task with id", response_model=TaskModelView)
 async def read_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id
+    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
     task = await task_collection.find_one({"_id": id})
     if task is None:
@@ -126,7 +127,7 @@ async def read_task(
 
 
 @router.delete("/{id}", response_description="Detele a task")
-async def delete_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id):
+async def delete_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
     task = await task_collection.find_one({"_id": id})
     if not task:
         raise HTTPException(status_code=404, detail=f"Task {id} not found")
@@ -143,7 +144,7 @@ async def delete_task(task_collection: DepTaskCollection, scheduler: DepSChedule
 
 @router.get("/{id}/pause", response_description="Pause the task")
 async def pause_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id
+    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
     task = await read_task(task_collection, scheduler, content_collection, id)
     task = TaskModelView.model_validate(task)
@@ -160,7 +161,7 @@ async def pause_task(
 
 @router.get("/{id}/resume", response_description="Resume the task")
 async def resume_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id
+    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
     task = await read_task(task_collection, scheduler, content_collection, id)
     task = TaskModelView.model_validate(task)
@@ -180,7 +181,7 @@ async def update_task(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
     content_collection: DepContentCollection,
-    id,
+    id: TaskId,
     task: TaskModelUpdate,
 ):
     old = await read_task(task_collection, scheduler, content_collection, id)
@@ -223,7 +224,7 @@ async def logs_task(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
     content_collection: DepContentCollection,
-    id,
+    id: TaskId,
     since: datetime = datetime.now() - timedelta(days=7),
     end: datetime = datetime.now(),
 ):
