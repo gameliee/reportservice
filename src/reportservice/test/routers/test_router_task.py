@@ -183,6 +183,7 @@ def test_update_task_trigger3(testclient: TestClient, createtesttask: str):
     assert response.status_code == 200
     ret = response.json()
     assert ret["trigger"]["cron"] == "59 23 * * *"
+    assert len(ret["trigger"]["exclude_dates"]) == 0
     # always pause after update trigger
     assert ret["enable"] is False
     assert ret["job"]["running"] is False

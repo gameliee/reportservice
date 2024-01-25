@@ -12,13 +12,14 @@ from pydantic import (
     NonNegativeInt,
     field_validator,
     create_model,
+    AwareDatetime,
 )
 from apscheduler.job import Job
 from ..content.models import ContentModel
 
 
 class JobModel(BaseModel):
-    pending: bool = Field(description="if a job is in pending state, it have not be stored into job")
+    pending: bool = Field(description="if a job is in pending state, it have not be stored into job storage")
     running: bool
     next_run_time: Optional[datetime]
 
@@ -45,9 +46,9 @@ class CronTriggerModel(TriggerModelBase):
 
     type: Literal[TriggerModelType.CRON] = Field(default=TriggerModelType.CRON, description="trigger type")
     cron: str = Field(..., description="cron string")
-    start_date: Optional[datetime] = Field(None, description="start date")
-    end_date: Optional[datetime] = Field(None, description="end date")
-    exclude_dates: Optional[List[datetime]] = Field([], description="exclude date")
+    start_date: Optional[AwareDatetime] = Field(None, description="start date")
+    end_date: Optional[AwareDatetime] = Field(None, description="end date")
+    exclude_dates: Optional[List[AwareDatetime]] = Field([], description="exclude date")
 
     @model_validator(mode="after")
     def validate_end_date(self) -> "CronTriggerModel":

@@ -1,18 +1,13 @@
 from datetime import datetime, timedelta
-from typing import List, Annotated
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.interval import IntervalTrigger
+from typing import List
 from apscheduler.triggers.date import DateTrigger
-from fastapi import APIRouter, Body, Request, HTTPException, status, Depends
+from fastapi import APIRouter, Body, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from pymongo.collection import Collection
 from pymongo.results import UpdateResult
 import apscheduler
 from apscheduler.job import Job
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient, AsyncIOMotorCollection
-from ...settings import AppSettingsModel
+from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
 from ..content.router import get_content
 from .task import render_and_send_today
 from .models import (
@@ -53,18 +48,20 @@ async def create_task(
     task: TaskModelCreate = Body(...),
 ):
     # schedule the task
-    # FIXME: handle exclude_dates
     if task.trigger.type == "cron":
+        _trigger: CronTriggerModel = task.trigger
         try:
-            _trigger: CronTriggerModel = task.trigger
-            trigger = CronTrigger.from_crontab(_trigger.cron)
-            trigger.start_date = _trigger.start_date
-            trigger.end_date = _trigger.end_date
+            trigger = CronTriggerWithHoliday.from_crontab(_trigger.cron)
         except ValueError as e:
             raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+        trigger.start_date = _trigger.start_date
+        trigger.end_date = _trigger.end_date
+        trigger.set_exclude_dates(_trigger.exclude_dates)
     elif task.trigger.type == "interval":
         _trigger: IntervalTriggerModel = task.trigger
-        trigger = IntervalTrigger(seconds=_trigger.interval, start_date=_trigger.start_time)
+        trigger = IntervalTriggerWithHoliday(
+            seconds=_trigger.interval, start_date=_trigger.start_time, exclude_dates=_trigger.exclude_dates
+        )
     elif task.trigger.type == "date":
         _trigger: DateTriggerModel = task.trigger
         trigger = DateTrigger(run_date=_trigger.run_date)
@@ -190,19 +187,21 @@ async def update_task(
     old = TaskModelView.model_validate(old)
 
     # schedule the task
-    # FIXME: handle exclude_dates
     if task.trigger is not None and task.trigger != old.trigger:
         if task.trigger.type == "cron":
+            _trigger: CronTriggerModel = task.trigger
             try:
-                _trigger: CronTriggerModel = task.trigger
-                trigger = CronTrigger.from_crontab(_trigger.cron)
-                trigger.start_date = _trigger.start_date
-                trigger.end_date = _trigger.end_date
+                trigger = CronTriggerWithHoliday.from_crontab(_trigger.cron)
             except ValueError as e:
                 raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+            trigger.start_date = _trigger.start_date
+            trigger.end_date = _trigger.end_date
+            trigger.set_exclude_dates(_trigger.exclude_dates)
         elif task.trigger.type == "interval":
             _trigger: IntervalTriggerModel = task.trigger
-            trigger = IntervalTrigger(seconds=_trigger.interval, start_date=_trigger.start_time)
+            trigger = IntervalTriggerWithHoliday(
+                seconds=_trigger.interval, start_date=_trigger.start_time, exclude_dates=_trigger.exclude_dates
+            )
         elif task.trigger.type == "date":
             _trigger: DateTriggerModel = task.trigger
             trigger = DateTrigger(run_date=_trigger.run_date)
