@@ -217,23 +217,3 @@ async def update_task(
     if len(task) >= 1:
         await task_collection.update_one({"_id": id}, {"$set": jsonable_encoder(task)})
     return await read_task(task_collection, scheduler, content_collection, id)
-
-
-@router.get("/{id}/logs", response_description="Do the task right now")
-async def logs_task(
-    task_collection: DepTaskCollection,
-    scheduler: DepSCheduler,
-    content_collection: DepContentCollection,
-    id: TaskId,
-    since: datetime = datetime.now() - timedelta(days=7),
-    end: datetime = datetime.now(),
-):
-    """get the logs from since to end
-
-    Args:
-        request (Request): _description_
-        id (_type_): id of the task
-        since (datetime): begin
-        end (datetime): end
-    """
-    raise HTTPException(status_code=501, detail="logs_task is not implemented yet")

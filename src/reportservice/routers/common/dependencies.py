@@ -9,12 +9,13 @@ from ...settings import AppSettingsModel
 
 __all__ = [
     "DepAppSettings",
-    "DepMongoCLient",
+    "DepMongoClient",
     "DepSCheduler",
     "DepConfigCollection",
-    "DepAppConfig",
     "DepContentCollection",
     "DepTaskCollection",
+    "DepLogCollection",
+    "DepAppConfig",
     "DepBodyFaceNameCollection",
     "DepStaffCollection",
     "DepLogger",
@@ -33,7 +34,7 @@ async def get_database_client(request: Request) -> AsyncIOMotorClient:
     return request.app.mongodb_client
 
 
-DepMongoCLient = Annotated[AsyncIOMotorClient, Depends(get_database_client)]
+DepMongoClient = Annotated[AsyncIOMotorClient, Depends(get_database_client)]
 
 
 async def get_scheduler(request: Request) -> AsyncIOScheduler:
@@ -43,13 +44,22 @@ async def get_scheduler(request: Request) -> AsyncIOScheduler:
 DepSCheduler = Annotated[AsyncIOScheduler, Depends(get_scheduler)]
 
 
-async def get_config_collection(settings: DepAppSettings, mongodb_client: DepMongoCLient) -> AsyncIOMotorCollection:
+async def get_config_collection(settings: DepAppSettings, mongodb_client: DepMongoClient) -> AsyncIOMotorCollection:
     db: AsyncIOMotorDatabase = mongodb_client[settings.DB_REPORT_NAME]
     collection = db[settings.DB_COLLECTION_CONFIG]
     return collection
 
 
 DepConfigCollection = Annotated[AsyncIOMotorCollection, Depends(get_config_collection)]
+
+
+async def get_log_collection(settings: DepAppSettings, mongodb_client: DepMongoClient) -> AsyncIOMotorCollection:
+    db: AsyncIOMotorDatabase = mongodb_client[settings.DB_REPORT_NAME]
+    collection = db[settings.DB_COLLECTION_LOG]
+    return collection
+
+
+DepLogCollection = Annotated[AsyncIOMotorCollection, Depends(get_log_collection)]
 
 
 async def get_config(collection: DepConfigCollection) -> AppConfigModel:
@@ -63,13 +73,13 @@ async def get_config(collection: DepConfigCollection) -> AppConfigModel:
 DepAppConfig = Annotated[AppConfigModel, Depends(get_config)]
 
 
-async def get_content_collection(settings: DepAppSettings, mongodb_client: DepMongoCLient) -> AsyncIOMotorCollection:
+async def get_content_collection(settings: DepAppSettings, mongodb_client: DepMongoClient) -> AsyncIOMotorCollection:
     db: AsyncIOMotorDatabase = mongodb_client[settings.DB_REPORT_NAME]
     collection = db[settings.DB_COLLECTION_CONTENT]
     return collection
 
 
-async def get_task_collection(settings: DepAppSettings, mongodb_client: DepMongoCLient) -> AsyncIOMotorCollection:
+async def get_task_collection(settings: DepAppSettings, mongodb_client: DepMongoClient) -> AsyncIOMotorCollection:
     db: AsyncIOMotorDatabase = mongodb_client[settings.DB_REPORT_NAME]
     collection = db[settings.DB_COLLECTION_TASK]
     return collection
@@ -80,7 +90,7 @@ DepTaskCollection = Annotated[AsyncIOMotorCollection, Depends(get_task_collectio
 
 
 async def get_faceid_BodyFaceName_collection(
-    app_config: DepAppConfig, mongo_client: DepMongoCLient
+    app_config: DepAppConfig, mongo_client: DepMongoClient
 ) -> AsyncIOMotorCollection:
     colname = app_config.faceiddb.face_collection
     db = mongo_client[app_config.faceiddb.database]
@@ -91,7 +101,7 @@ DepBodyFaceNameCollection = Annotated[AsyncIOMotorCollection, Depends(get_faceid
 
 
 async def get_faceid_staff_collection(
-    app_config: DepAppConfig, mongo_client: DepMongoCLient
+    app_config: DepAppConfig, mongo_client: DepMongoClient
 ) -> AsyncIOMotorCollection:
     colname = app_config.faceiddb.staff_collection
     db = mongo_client[app_config.faceiddb.database]

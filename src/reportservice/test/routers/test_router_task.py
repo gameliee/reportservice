@@ -229,8 +229,3 @@ def test_resume_task(testclient: TestClient, createtesttask: str):
     assert next_run_time.hour == 23
     assert next_run_time.minute == 59
     assert next_run_time.second == 0
-
-
-def test_logs_task(testclient: TestClient, createtesttask: str):
-    response = testclient.get(f"{PREFIX}/{createtesttask}/logs")
-    assert response.status_code == 501

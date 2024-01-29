@@ -22,7 +22,7 @@ def patch_settings(monkeypatch_session, temp_log_file, dburi, random_database_na
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_random_collection(patch_settings, dburi, random_database_name):
+def delete_random_database(patch_settings, dburi, random_database_name):
     yield None
     mongo = MongoClient(dburi)
     mongo.drop_database(random_database_name)

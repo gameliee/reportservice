@@ -2,7 +2,7 @@ from typing import Annotated, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, Body
 from motor.motor_asyncio import AsyncIOMotorCollection
-from ..common import DepAppConfig, DepMongoCLient
+from ..common import DepAppConfig, DepMongoClient
 from ..common import DepStaffCollection, DepBodyFaceNameCollection
 from .retrieval import get_inout_count, get_people_count, get_people_inout
 from .models import QueryParamters, PersonInoutCollection
