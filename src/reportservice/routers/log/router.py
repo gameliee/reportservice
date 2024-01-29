@@ -15,13 +15,13 @@ async def list_logs(
     limit: int = 0,
     id: Optional[str] = None,
     begin: datetime = datetime.now() - timedelta(days=7),
-    end: datetime = datetime.now(),
+    end: datetime = datetime.now() + timedelta(days=1),
     level: LogLevelEnum = LogLevelEnum.NOTSET,
 ):
     query = {"logtime": {"$gt": begin, "$lte": end}}
     if id is not None:
         query["metadata.uid"] = id
-    if level is not None:
+    if level != LogLevelEnum.NOTSET:
         query["metadata.level"] = level.value
     print(query)
     records = []
