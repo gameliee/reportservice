@@ -162,9 +162,9 @@ async def query_content(
     content = await get_content(content_collection, id=id)
     content = ContentModel.model_validate(content)
 
-    query_result = await query(staff_collection, bodyfacename_collection, content, query_date)
+    query_result = await query(staff_collection, bodyfacename_collection, content, query_date, logger)
 
-    logger.info(query_result, extra={"id": id})
+    logger.debug(query_result, extra={"id": id})
     return query_result
 
 
@@ -185,8 +185,6 @@ async def query_render_content(
     content = await get_content(content_collection, id=id)
     content = ContentModel.model_validate(content)
     text = await render(query_result, content)
-
-    logger.info(text, extra={"id": id})
     return text
 
 

@@ -11,7 +11,7 @@ from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from .settings import settings
-from . import customlog
+from .customlog import formatter
 
 from .routers.stat.router import router as stat_router
 from .routers.config.router import router as config_router
@@ -52,7 +52,8 @@ async def init_dblogger(app: FastAPI):
 
     loop = asyncio.get_event_loop()
     log_mongodb_handler = MongoHandler(log_collection, loop)
-    log_mongodb_handler.setLevel(logging.DEBUG)
+    log_mongodb_handler.setLevel(logging.INFO)
+    log_mongodb_handler.setFormatter(formatter)
     app.logger.addHandler(log_mongodb_handler)
     app.log_mongodb_handler = log_mongodb_handler
 

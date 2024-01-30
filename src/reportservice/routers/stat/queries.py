@@ -38,17 +38,38 @@ def pipeline_staffs_inou(
         {
             "$lookup": {
                 "from": bodyfacename_collection_name,
-                "localField": "staff_code",
-                "foreignField": "staff_id",
+                "let": {"staff_code_var": "$staff_code"},
                 "as": "found",
                 "pipeline": [
                     {
                         "$match": {
-                            "image_time": {"$gte": begin, "$lte": end},
-                            "face_reg_score": {"$gte": threshold},
-                            "has_mask": has_mask,
-                            "staff_id": "$staff_code",
-                        }
+                            "$expr": {
+                                "$and": [
+                                    {
+                                        "$eq": [
+                                            "$staff_id",
+                                            "$$staff_code_var",
+                                        ],
+                                    },
+                                    {
+                                        "$gte": [
+                                            "$image_time",
+                                            begin,
+                                        ],
+                                    },
+                                    {
+                                        "$lte": [
+                                            "$image_time",
+                                            end,
+                                        ],
+                                    },
+                                    {
+                                        "$gte": ["$face_reg_score", threshold],
+                                    },
+                                    {"$eq": ["$has_mask", has_mask]},
+                                ],
+                            },
+                        },
                     },
                     {"$project": {"staff_id": 1, "image_time": 1}},
                     {"$sort": {"image_time": 1}},
@@ -62,7 +83,7 @@ def pipeline_staffs_inou(
                 ],
             }
         },
-        {"$unwind": {"path": "$found", "includeArrayIndex": "string", "preserveNullAndEmptyArrays": True}},
+        {"$unwind": {"path": "$found", "includeArrayIndex": "arrayIndex", "preserveNullAndEmptyArrays": True}},
         {
             "$project": {
                 "_id": 0,

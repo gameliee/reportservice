@@ -1,5 +1,6 @@
 from typing import List
 from datetime import datetime
+import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
 from .models import QueryParamters, PersonInoutCollection, PersonInout
 from .queries import pipeline_staffs_inou, pipeline_count
@@ -60,6 +61,7 @@ async def get_people_inout(
     query_params: QueryParamters,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
+    logger: logging.Logger = logging.getLogger(__name__),
 ) -> PersonInoutCollection:
     """
     query the first and last recognition time of each staffcode in the database
@@ -81,6 +83,7 @@ async def get_people_inout(
         threshold=0.0,
         bodyfacename_collection_name=bodyfacename_collection.name,
     )
+    logger.debug(f"running aggregation pipeline {pipeline}")
     cursor = staff_collection.aggregate(pipeline)
 
     ret: List[PersonInout] = []

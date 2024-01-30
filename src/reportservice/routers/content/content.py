@@ -1,3 +1,4 @@
+import logging
 from base64 import b64encode, b64decode
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -28,6 +29,7 @@ async def query(
     bodyfacename_collection: AsyncIOMotorCollection,
     content: ContentModel,
     query_date: datetime,
+    logger: logging.Logger,
 ) -> ContentQueryResult:
     day_begin = datetime.combine(date=query_date.date(), time=datetime.min.time())
     day_end = datetime.combine(date=query_date.date(), time=datetime.max.time())
@@ -44,7 +46,7 @@ async def query(
     )  # BUG: this is not correct, change to begin of the day to end of the day
 
     people_inout = await get_people_inout(
-        staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end
+        staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end, logger
     )
 
     should_checkinout_count = await get_should_checkinout_count(staff_collection, day_begin, day_end)
