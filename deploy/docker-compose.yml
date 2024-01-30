@@ -1,33 +1,19 @@
-version: '3.10'
-
-volumes:
-  mongo-persistent:
-
+version: "3.10"
 
 services:
-  fastapi:
+  reportservice:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: dat.local:5001/reportservice:0.0.1
+    image: dat.local:5001/reportservice:0.0.2
     environment:
-      - DYNACONF_DB_URL = "mongodb://foo:password@mongo:27017/general?authSource=admin&retryWrites=true&w=majority"
-      - DYNACONF_DB_NAME = "reportservice"
+      # - DYNACONF_DB_URL = "" # Change database uri if needed
       - DYNACONF_PORT = 3002
     ports:
       - 3003:3002
-    depends_on:
-      - mongo
+    # volumes:
+      # - ./.secret.toml:/usr/src/app/.secret.toml:ro # For secrets if needed
     restart: unless-stopped
+    env_file:
+      - ../.env
 
-  mongo:
-    image: mongo:6.0-focal
-    restart: always
-    volumes:
-      - mongo-persistent:/data/db
-    # ports:
-      # - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: foo
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: general
