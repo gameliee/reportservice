@@ -160,6 +160,7 @@ def convert_personinout_to_excel(
         virtual_workbook = BytesIO()
         empty_df.to_excel(virtual_workbook, index=False)
         return virtual_workbook.getvalue()
+
     result_df = pd.DataFrame(jsonable_encoder(people_inout.values))
     result_df.fillna("", inplace=True)
     result_df.rename(
@@ -218,5 +219,5 @@ def convert_personinout_to_excel(
 
     # convert to excel
     virtual_workbook = BytesIO()
-    result_df.to_excel(virtual_workbook, index=False)
+    result_df.to_excel(virtual_workbook, startrow=2, index=False)  # startrow=2 is fixed to match input excel file
     return virtual_workbook.getvalue()

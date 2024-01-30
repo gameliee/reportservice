@@ -2,7 +2,13 @@ import pandas as pd
 from datetime import datetime
 import pytest
 from ...stat import PersonInoutCollection, PersonInout
-from ..excel import read_excel_validate, fill_excel, fill_personinout_to_excel, convert_personinout_to_excel
+from ..excel import (
+    read_excel_validate,
+    fill_excel,
+    fill_personinout_to_excel,
+    convert_personinout_to_excel,
+    excel_to_html,
+)
 
 
 def test_input_validate(excelbytes):
@@ -43,13 +49,8 @@ def test_fill_excel1(excelbytes):
         f.write(outbytes)
 
 
-@pytest.mark.skip
-def test_fill_personinout_to_excel(excelbytes):
-    fill_personinout_to_excel(excelbytes, [])
-    pass
-
-
-def test_convert_personinout_to_excel():
+@pytest.fixture
+def some_personinout() -> PersonInoutCollection:
     inout = PersonInoutCollection(
         count=4,
         values=[
@@ -83,7 +84,17 @@ def test_convert_personinout_to_excel():
             ),
         ],
     )
+    return inout
 
-    outbytes = convert_personinout_to_excel(inout)
+
+def test_fill_personinout_to_excel(excelbytes, some_personinout: PersonInoutCollection):
+    fill_personinout_to_excel(some_personinout, excelbytes)
+
+
+def test_convert_personinout_to_excel(some_personinout: PersonInoutCollection):
+    outbytes = convert_personinout_to_excel(some_personinout)
     with open("convert.xlsx", "wb") as f:
         f.write(outbytes)
+
+    with open("convert.html", "w") as f:
+        f.write(excel_to_html(outbytes))
