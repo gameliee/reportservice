@@ -1,7 +1,9 @@
+import io
 import pandas as pd
 from datetime import datetime
 import pytest
 from ...stat import PersonInoutCollection, PersonInout
+from ..models import ExcelInvalidException, ExcelColumn
 from ..excel import (
     read_excel_validate,
     fill_excel,
@@ -22,6 +24,45 @@ def test_read_excel_validate(excelbytes):
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 8
     assert len(df) == 29
+
+
+def test_read_excel_validate_invalid():
+    with pytest.raises(ExcelInvalidException):
+        read_excel_validate(b"invalid")
+
+
+def test_read_excel_validate_empty():
+    # Create an empty DataFrame
+    df = pd.DataFrame()
+
+    virtual_workbook = io.BytesIO()
+    df.to_excel(virtual_workbook, startrow=2, index=False)  # startrow=2 is fixed to match input excel file
+
+    with pytest.raises(ExcelInvalidException):
+        read_excel_validate(virtual_workbook.getvalue())
+
+
+def test_read_excel_validate_empty_good_rows():
+    # Create an empty DataFrame
+    df = pd.DataFrame(
+        columns=[
+            ExcelColumn.ESTAFF,
+            ExcelColumn.EFIRST,
+            ExcelColumn.ELASTT,
+            ExcelColumn.ESAMPL,
+        ],
+    )
+
+    virtual_workbook = io.BytesIO()
+    df.to_excel(virtual_workbook, startrow=2, index=False)  # startrow=2 is fixed to match input excel file
+
+    # with pytest.raises(ExcelInvalidException):
+    read_excel_validate(virtual_workbook.getvalue())
+
+    # different startrow
+    df.to_excel(virtual_workbook, startrow=0, index=False)  # startrow=2 is fixed to match input excel file
+    with pytest.raises(ExcelInvalidException):
+        read_excel_validate(virtual_workbook.getvalue())
 
 
 def test_fill_excel_with_content(excelbytes):

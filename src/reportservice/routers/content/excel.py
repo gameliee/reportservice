@@ -32,16 +32,14 @@ def read_excel_validate(excel_bytes: bytes) -> pd.DataFrame | None:
     Returns:
         pd.DataFrame | None: return None if cannot read the bytestream, or required columns are missing
     """
+    file_like_excel = BytesIO(excel_bytes)
     try:
-        file_like_excel = BytesIO(excel_bytes)
         df = pd.read_excel(file_like_excel, header=2, dtype=str, engine="openpyxl")
-        df.columns = [x.lower().strip() for x in df.columns]
-    except Exception as e:  # noqa: F841
-        # TODO: log the error here
-        print("could not read excel file stored")
-        df = pd.DataFrame(columns=[ExcelColumn.ESTAFF])
+    except Exception as e:
+        raise ExcelInvalidException(f"cannot read excel file: {e}")
 
     # only care about defined columns
+    df.columns = [x.lower().strip() for x in df.columns]
     if ExcelColumn.ESTAFF not in df.columns:
         raise ExcelInvalidException(f'in excel file, column "{ExcelColumn.ESTAFF}" not found')
 
@@ -94,6 +92,10 @@ def fill_excel(excel_bytes: bytes, filldata: pd.DataFrame) -> bytes | None:
 def excel_to_html(excelbytes: bytes) -> str:
     """given the excel file, convert it to html using pandas"""
     df = read_excel_validate(excel_bytes=excelbytes)
+
+    # Remove leading empty column
+    df = df.loc[:, ~df.columns.str.startswith("unnamed:")]
+
     return df.fillna("").to_html(index=False)
 
 
