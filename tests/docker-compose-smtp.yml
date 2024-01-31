@@ -15,10 +15,13 @@ services:
     ports: 
       - 8026:80 # web ui
       - 1026:25 # SMTP
-      - 1466:465 # SMTP over SSL
+      # - 1466:465 # SMTP over SSL -> not works
     environment:
       - ServerOptions__HostName=localhost
-      - ServerOptions__TlsMode=ImplicitTls
+      - ServerOptions__TlsMode=None # 
+      # - ServerOptions__TlsMode=StartTls # On demand if client supports STARTTLS
+      # - ServerOptions__TlsMode=ImplicitTls # TLS as soon as connection is established, which required STARTTLS
+
       # - ServerOptions__TlsMode=ImplicitTls
       # - ServerOptions__TlsCertificate=/app/certs/smtp4dev.crt
       # - ServerOptions__TlsCertificatePrivateKey=/app/certs/smtp4dev.key

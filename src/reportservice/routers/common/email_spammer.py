@@ -45,7 +45,7 @@ class EmailSpammer:
         if useSSL is True:
             smtp_server = smtplib.SMTP_SSL(smtp_server, smtp_port, context=context)
         else:
-            smtp_server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+            smtp_server = smtplib.SMTP(smtp_server, smtp_port)
 
         smtp_server.ehlo()
         smtp_server.login(self.account, self.pwd)
