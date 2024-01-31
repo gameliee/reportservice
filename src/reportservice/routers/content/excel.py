@@ -158,7 +158,7 @@ def convert_personinout_to_excel(
         )
         # convert to excel
         virtual_workbook = BytesIO()
-        empty_df.to_excel(virtual_workbook, index=False)
+        empty_df.to_excel(virtual_workbook, startrow=2, index=False)  # startrow=2 is fixed to match input excel file
         return virtual_workbook.getvalue()
 
     result_df = pd.DataFrame(jsonable_encoder(people_inout.values))
