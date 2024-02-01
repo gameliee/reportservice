@@ -9,3 +9,4 @@ pytest-cov
 pytest-docker
 pytest-asyncio
 pytest-mock # for email
+pyinstrument # for profiling

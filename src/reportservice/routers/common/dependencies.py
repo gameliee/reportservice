@@ -4,7 +4,7 @@ from fastapi import Request, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient, AsyncIOMotorCollection
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from .config_models import AppConfigModel
-from .email_spammer import EmailSpammer
+from .async_email_spammer import AsyncEmailSpammer
 from ...settings import AppSettingsModel
 
 __all__ = [
@@ -118,7 +118,7 @@ async def get_logger(request: Request) -> Logger:
 DepLogger = Annotated[Logger, Depends(get_logger)]
 
 
-async def get_spammer(app_config: DepAppConfig) -> Callable[[], EmailSpammer] | None:
+async def get_spammer(app_config: DepAppConfig) -> Callable[[], AsyncEmailSpammer] | None:
     smtpconfig = app_config.smtp
 
     if not smtpconfig.enable:
@@ -126,7 +126,7 @@ async def get_spammer(app_config: DepAppConfig) -> Callable[[], EmailSpammer] | 
     else:
         # NOTE: do not return spammer directly because it will have to be send "nope" from time to time to keep it alive
         def create_spammer():
-            return EmailSpammer(
+            return AsyncEmailSpammer(
                 smtpconfig.username,
                 smtpconfig.account,
                 smtpconfig.password,
@@ -138,4 +138,4 @@ async def get_spammer(app_config: DepAppConfig) -> Callable[[], EmailSpammer] | 
         yield create_spammer
 
 
-DepEmailSpammer = Annotated[Callable[[], EmailSpammer] | None, Depends(get_spammer)]
+DepEmailSpammer = Annotated[Callable[[], AsyncEmailSpammer] | None, Depends(get_spammer)]

@@ -62,6 +62,8 @@ pycodestyle==2.11.1
     # via flake8
 pyflakes==3.1.0
     # via flake8
+pyinstrument==4.6.2
+    # via -r requirements/dev-requirements.in
 pyproject-hooks==1.0.0
     # via build
 pytest==7.4.4

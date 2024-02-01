@@ -5,3 +5,5 @@ venv
 *.lprof
 .vscode
 *.xlsx
+profile*.html
+convert.html

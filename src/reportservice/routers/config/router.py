@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from ..common import AppConfigModel, AppConfigModelUpdate
 from ..common import DepAppConfig, DepConfigCollection
-from ..common import EmailSpammer
+from ..common import AsyncEmailSpammer
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ async def validate_config(config: AppConfigModel) -> bool:
     try:
         # construct email connection here
         if config.smtp.enable:
-            EmailSpammer(
+            spammer = AsyncEmailSpammer(
                 config.smtp.username,
                 config.smtp.account,
                 config.smtp.password,
@@ -22,6 +22,7 @@ async def validate_config(config: AppConfigModel) -> bool:
                 config.smtp.port,
                 useSSL=config.smtp.useSSL,
             )
+            await spammer.connect()
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Email settings did not work: {e} with settings {config.smtp}")
     return True

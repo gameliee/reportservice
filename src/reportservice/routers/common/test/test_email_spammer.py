@@ -1,6 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 from smtplib import SMTPRecipientsRefused
+from pyinstrument import Profiler
 from ..email_spammer import EmailSpammer
 
 
@@ -82,3 +83,18 @@ def test_send_nothing(spammerwithlove):
 
 def test_send_wrong_address(spammerwithlove):
     spammerwithlove.send(to="[totheworld]", subject="test_simple", body="this is the body")
+
+
+def test_spammer_performance(smtpconfig):
+    with Profiler() as profiler:
+        for i in range(10):
+            EmailSpammer(
+                username=smtpconfig["username"],
+                account=smtpconfig["account"],
+                password=smtpconfig["password"],
+                smtp_server=smtpconfig["server"],
+                smtp_port=smtpconfig["port"],
+                useSSL=smtpconfig["useSSL"],
+            )
+
+    profiler.write_html("profile_emailspammer.html")

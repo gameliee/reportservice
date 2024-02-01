@@ -9,7 +9,7 @@ from ..stat import (
     get_people_inout,
     get_should_checkinout_count,
 )
-from ..common import EmailSpammer
+from ..common import AsyncEmailSpammer
 from .excel import fill_personinout_to_excel, excel_to_html, convert_personinout_to_excel
 from .models import ContentModel, ContentModelRendered, ContentQueryResult
 
@@ -116,7 +116,7 @@ async def render(
     return out
 
 
-async def send(contentrenderd: ContentModelRendered, spammer: EmailSpammer):
+async def send(contentrenderd: ContentModelRendered, spammer: AsyncEmailSpammer):
     """if sent, return the sent content, if not, return none"""
     if spammer is None:
         return None
@@ -124,7 +124,7 @@ async def send(contentrenderd: ContentModelRendered, spammer: EmailSpammer):
     if contentrenderd.attach is not None and contentrenderd.attach_name is not None:
         excel_bytes = b64decode(contentrenderd.attach.encode("utf-8"))
         excel_name = contentrenderd.attach_name
-        ret = spammer.send(
+        ret = await spammer.send(
             to=contentrenderd.to,
             cc=contentrenderd.cc,
             bcc=contentrenderd.bcc,
@@ -134,7 +134,7 @@ async def send(contentrenderd: ContentModelRendered, spammer: EmailSpammer):
             attachment_data=excel_bytes,
         )
     else:
-        ret = spammer.send(
+        ret = await spammer.send(
             to=contentrenderd.to,
             cc=contentrenderd.cc,
             bcc=contentrenderd.bcc,
