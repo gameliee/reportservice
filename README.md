@@ -5,7 +5,7 @@
 Run directly
 
 ```bash
-FORCE_ENV_FOR_DYNACONF="production" python -m src.mypk
+ENV_FOR_DYNACONF="production" python -m src.reportservice
 ```
 
 Or use the docker deployment

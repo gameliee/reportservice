@@ -5,7 +5,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: dat.local:5001/reportservice:0.0.2
+    image: dat.local:5001/reportservice:0.0.3
     environment:
       # - DYNACONF_DB_URL = "" # Change database uri if needed
       - DYNACONF_PORT = 3002
