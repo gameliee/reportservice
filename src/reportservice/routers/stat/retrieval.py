@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Any
 from datetime import datetime
 import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .models import QueryParamters, PersonInoutCollection, PersonInout
-from .queries import pipeline_staffs_inou, pipeline_count
+from .models import QueryParamters, PersonInoutCollection, PersonInout, MongoStaffModel
+from .queries import pipeline_staffs_inou, pipeline_count, query_find_staff, query_find_staff_inout
 
 
 async def get_people_count(
@@ -76,19 +76,37 @@ async def get_people_inout(
     if query_params.is_empty():
         return PersonInoutCollection(count=0, values=[])
 
-    pipeline = pipeline_staffs_inou(
-        query_params,
-        begin,
-        end,
-        threshold=0.0,
-        bodyfacename_collection_name=bodyfacename_collection.name,
-    )
-    logger.debug(f"running aggregation pipeline {pipeline}")
-    cursor = staff_collection.aggregate(pipeline)
+    # NOTE: need to use two stage query here because the $lookup stage can not use index
+    # might be fixed in the future
 
-    ret: List[PersonInout] = []
-    async for document in cursor:
-        personinout = PersonInout.model_validate(document)
-        ret.append(personinout)
+    # first stage: find all the staffs
+    stage1 = query_find_staff(query_params)
+    logger.debug(f"running in-out pipeline stage1: {stage1}")
+    cursor1 = staff_collection.aggregate(stage1)
+    final_result: List[PersonInout] = []
+    async for document in cursor1:
+        staff = PersonInout.model_validate(document)
+        final_result.append(staff)
 
-    return PersonInoutCollection(count=len(ret), values=ret)
+    logger.debug(f"running in-out pipeline stage1 result: {final_result}")
+
+    # second stage: find in-out information related to the first stage
+    staffcodes = [staff.staff_code for staff in final_result]
+    stage2 = query_find_staff_inout(staffcodes, begin, end, 0.63, False)
+    logger.debug(f"running in-out pipeline stage2: {stage2}")
+    cursor2 = bodyfacename_collection.aggregate(stage2)
+
+    # now merge the results of stage1 and stage2 together
+    _stage2_result: List[Any] = []
+    async for document in cursor2:
+        _stage2_result.append(document)
+        staffcode = document["staff_code"]
+        for staff in final_result:
+            if staff.staff_code == staffcode:
+                staff.first_record = document["firstDocument"]
+                staff.last_record = document["lastDocument"]
+                break
+
+    logger.debug(f"running in-out pipeline stage2 result: {_stage2_result}")
+
+    return PersonInoutCollection(count=len(final_result), values=final_result)
