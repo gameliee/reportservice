@@ -6,12 +6,22 @@ from fastapi.encoders import jsonable_encoder
 from pymongo.results import UpdateResult
 import apscheduler
 from apscheduler.job import Job
-from ..models import CronTriggerModel, IntervalTriggerModel, DateTriggerModel, TaskId
+from ..models import TaskId
 from ..common import DepTaskCollection, DepSCheduler, DepContentCollection, DepAppSettings
 from ..content.router import get_content
 from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
 from .task import render_and_send_today
-from .models import TaskModelCreate, TaskModelView, TaskModelUpdate, ContentModel, JobModel
+from .models import (
+    TaskModelCreate,
+    TaskModelView,
+    TaskModelUpdate,
+    ContentModel,
+    JobModel,
+    CronTriggerModel,
+    IntervalTriggerModel,
+    DateTriggerModel,
+    TriggerModel,
+)
 
 
 async def remove_orphan_jobs(task_collection: DepTaskCollection, scheduler: DepSCheduler):
