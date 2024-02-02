@@ -1,20 +1,47 @@
 import json
+import uuid
 import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
-from .test_router_content import createtestcontent
+from .test_router_content import PREFIX as CONTENT_PREFIX
 
 PREFIX = "/task"
 
 
-@pytest.fixture(scope="session")
-def createtesttask(testclient, createtestcontent: str, testtaskid: str) -> str:  # noqa: F811
+@pytest.fixture(scope="module")
+def fakecontentid(testclient) -> str:
+    testid = str(uuid.uuid4())
+    payload = json.dumps(
+        {
+            "_id": testid,
+            "name": "example content",
+            "description": "just an example content",
+            "to": ["example@example.com"],
+            "checkin_begin": "2000-01-01 07:00:00",
+            "checkin_duration": "PT2H",
+            "checkout_begin": "2000-01-01 17:00:00",
+            "checkout_duration": "PT2H",
+            "subject_template": "please use {{year}}",
+            "body_template": "please use {{people_count}}",
+            "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
+        }
+    )
+
+    response = testclient.post(f"{CONTENT_PREFIX}/", data=payload)
+    assert response.status_code == 201
+    yield testid
+    response = testclient.delete(f"{CONTENT_PREFIX}/{testid}")
+    assert response.status_code == 200
+
+
+@pytest.fixture(scope="module")
+def createtesttask(testclient, fakecontentid: str, testtaskid: str) -> str:  # noqa: F811
     testid = testtaskid
     payload = json.dumps(
         {
             "_id": testid,
             "actual_sent": "false",
-            "content_id": createtestcontent,
+            "content_id": fakecontentid,
             "description": "just an example task",
             "name": "My important task",
             "timeout": 1,
@@ -26,6 +53,15 @@ def createtesttask(testclient, createtestcontent: str, testtaskid: str) -> str: 
     yield testid
     response = testclient.delete(f"{PREFIX}/{testid}")
     assert response.status_code == 200, response.json()
+
+
+def test_content_get_tasks(testclient: TestClient, createtesttask: str, fakecontentid: str):
+    response = testclient.get(f"{CONTENT_PREFIX}/{fakecontentid}/tasks")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 1
+    task = tasks[0]
+    assert task["_id"] == createtesttask
 
 
 def test_list_tasks(testclient: TestClient):
@@ -198,6 +234,7 @@ def test_resume_task_after_update(testclient: TestClient, createtesttask: str):
     assert ret["job"]["running"] is True
     next_run_time = ret["job"]["next_run_time"]
     next_run_time = datetime.fromisoformat(next_run_time)
+    assert next_run_time.utcoffset().total_seconds() == 7 * 3600
     assert next_run_time.hour == 23
     assert next_run_time.minute == 59
     assert next_run_time.second == 0
@@ -226,6 +263,7 @@ def test_resume_task(testclient: TestClient, createtesttask: str):
     assert ret["job"]["running"] is True
     next_run_time = ret["job"]["next_run_time"]
     next_run_time = datetime.fromisoformat(next_run_time)
+    assert next_run_time.utcoffset().total_seconds() == 7 * 3600
     assert next_run_time.hour == 23
     assert next_run_time.minute == 59
     assert next_run_time.second == 0

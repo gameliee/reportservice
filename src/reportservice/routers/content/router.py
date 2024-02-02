@@ -8,12 +8,11 @@ from fastapi.responses import JSONResponse
 from .excel import read_excel_validate, ExcelInvalidException, ExcelColumn
 from .models import (
     ContentModelCreate,
-    ContentModel,
     ContentModelRendered,
     ContentModelUpdate,
     ContentQueryResult,
-    QueryParamters,
 )
+from ..models import ContentModel, QueryParamters, ContentId, TaskModelBase
 from .content import render, send, query
 from ..common import DepAppConfig, DepContentCollection, DepTaskCollection
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
@@ -111,13 +110,18 @@ async def download_excel(collection: DepContentCollection, id):
     return response
 
 
-@router.delete("/{id}", response_description="Delete a content, also delete related tasks")
-async def delete_content(content_collection: DepContentCollection, task_collection: DepTaskCollection, id):
+@router.delete(
+    "/{id}",
+    response_description="delete a content which linked with no task. If there are tasks using this content, abort and raise error",
+)
+async def delete_content(content_collection: DepContentCollection, task_collection: DepTaskCollection, id: ContentId):
     """delete a content which linked with no task. If there are tasks using this content, abort and raise error"""
-    # is there any tasks with this id?
     task = await task_collection.find_one({"content_id": id})
     if task is not None:
-        raise HTTPException(status_code=400, detail=f"There are tasks using this content, one is {task}")
+        raise HTTPException(
+            status_code=400,
+            detail="There are tasks using this content, query to {content_id}/tasks to view them",
+        )
 
     delete_result = await content_collection.delete_one({"_id": id})
 
@@ -125,6 +129,22 @@ async def delete_content(content_collection: DepContentCollection, task_collecti
         return JSONResponse(status_code=status.HTTP_200_OK, content=f"Content {id} has been deleted")
 
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
+
+
+@router.get("/{id}/tasks", response_description="Get all tasks of a content", response_model=List[TaskModelBase])
+async def get_tasks_of_content(
+    content_collection: DepContentCollection,
+    task_collection: DepTaskCollection,
+    id: ContentId,
+    offset: int = 0,
+    limit: int = 0,
+):
+    content = await get_content(content_collection, id=id)
+    content = ContentModel.model_validate(content)
+    tasks = []
+    async for doc in task_collection.find({"content_id": content.id}).skip(offset).limit(limit):
+        tasks.append(doc)
+    return tasks
 
 
 @router.put("/{id}", response_description="Update a content")

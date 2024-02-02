@@ -1,18 +1,13 @@
 import pytest
 from datetime import datetime, timezone
 from pydantic import ValidationError
-from ..models import (
-    JobModel,
-    TaskModelBase,
-    TaskModelUpdate,
-    TaskModelView,
-    TaskModelCreate,
-    TriggerModelBase,
+from ...models import (
     TriggerModelType,
     CronTriggerModel,
     IntervalTriggerModel,
     DateTriggerModel,
 )
+from ..models import TaskModelBase, TaskModelUpdate, TaskModelCreate
 
 
 def test_cron_trigger_model():

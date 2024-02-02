@@ -77,6 +77,11 @@ def test_download_excel1(testclient: TestClient, createtestcontent: str):
     assert response.status_code == 404
 
 
+def test_content_get_tasks1(testclient: TestClient, createtestcontent: str):
+    response = testclient.get(f"{PREFIX}/aaa/tasks")
+    assert response.status_code == 404
+
+
 def test_upload_excel_fail(testclient: TestClient, createtestcontent: str, excelfile):
     payload = {}
     files = [
@@ -214,3 +219,9 @@ def test_render_content2(
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render", params={"render_date": renderdate})
     assert response.status_code == 200, response.json()
+
+
+def test_get_tasks2(testclient: TestClient, createtestcontent: str):
+    response = testclient.get(f"{PREFIX}/{createtestcontent}/tasks")
+    assert response.status_code == 200
+    assert response.json() == []

@@ -149,4 +149,4 @@ async def connection_status():
 
 @app.get("/version")
 async def version():
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"version": "0.0.1"})
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"version": "0.0.4"})

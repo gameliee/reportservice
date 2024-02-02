@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from typing import List
 from apscheduler.triggers.date import DateTrigger
 from fastapi import APIRouter, Body, HTTPException, status, Depends
@@ -7,21 +6,12 @@ from fastapi.encoders import jsonable_encoder
 from pymongo.results import UpdateResult
 import apscheduler
 from apscheduler.job import Job
-from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
-from ..content.router import get_content
-from .task import render_and_send_today
-from .models import (
-    TaskModelCreate,
-    TaskModelView,
-    TaskModelUpdate,
-    ContentModel,
-    JobModel,
-    CronTriggerModel,
-    IntervalTriggerModel,
-    DateTriggerModel,
-    TaskId,
-)
+from ..models import CronTriggerModel, IntervalTriggerModel, DateTriggerModel, TaskId
 from ..common import DepTaskCollection, DepSCheduler, DepContentCollection, DepAppSettings
+from ..content.router import get_content
+from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
+from .task import render_and_send_today
+from .models import TaskModelCreate, TaskModelView, TaskModelUpdate, ContentModel, JobModel
 
 
 async def remove_orphan_jobs(task_collection: DepTaskCollection, scheduler: DepSCheduler):
