@@ -1,15 +1,12 @@
-import os
 import logging
-import psutil
-import threading
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status, Depends
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from .healthcheck import HealthCheck, healthcheck
 from .settings import settings
 from .customlog import formatter
 
@@ -122,31 +119,5 @@ app.include_router(log_router, prefix="/log", tags=["log"])
 
 
 @app.get("/")
-async def healthcheck():
-    pid = os.getpid()
-    process = psutil.Process(pid)
-    memory_info = process.memory_info()
-    thread_count = threading.active_count()
-
-    return {
-        "pid": pid,
-        "Memory Usage": f"{memory_info.rss / 1024:.2f} KB",
-        "Thread Count": f"{thread_count}",
-    }
-
-
-@app.get("/connection-status")
-async def connection_status():
-    try:
-        await app.mongodb_client.server_info()
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "Connected"})
-    except Exception as e:
-        raise e
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"status": "Disconnected", "error": str(e)}
-        )
-
-
-@app.get("/version")
-async def version():
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"version": "0.0.4"})
+async def api_healthcheck(request: Request) -> HealthCheck:
+    return await healthcheck(request.app)
