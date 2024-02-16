@@ -96,7 +96,6 @@ async def create_task(
 async def list_tasks(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
-    content_collection: DepContentCollection,
     offset: int = 0,
     limit: int = 0,
 ):
@@ -107,18 +106,13 @@ async def list_tasks(
         job = scheduler.get_job(atask["job_id"])
         if job is None:
             raise HTTPException(status_code=404, detail=f"In task {id}, Job {atask['job_id']} not found")
-        content = await get_content(content_collection, id=atask["content_id"])
-        if content is None:
-            raise HTTPException(status_code=404, detail=f"In task {id}, Content {atask['content_id']} not found")
-        task = TaskModelView(job=JobModel.parse_job(job), content=content, **atask)
+        task = TaskModelView(job=JobModel.parse_job(job), **atask)
         tasks.append(task)
     return tasks
 
 
 @router.get("/{id}", response_model=TaskModelView, responses=responses)
-async def read_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
-):
+async def read_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
     """Get task with id"""
     task = await task_collection.find_one({"_id": id})
     if task is None:
@@ -126,10 +120,7 @@ async def read_task(
     job = scheduler.get_job(task["job_id"])
     if job is None:
         raise HTTPException(status_code=404, detail=f"In task {id}, Job {task['job_id']} not found")
-    content = await get_content(content_collection, task["content_id"])
-    if content is None:
-        raise HTTPException(status_code=404, detail=f"In task {id}, Content {task['content_id']} not found")
-    task = TaskModelView(job=JobModel.parse_job(job), content=content, **task)
+    task = TaskModelView(job=JobModel.parse_job(job), **task)
     return task
 
 
@@ -150,11 +141,9 @@ async def delete_task(task_collection: DepTaskCollection, scheduler: DepSChedule
 
 
 @router.get("/{id}/pause", responses=responses)
-async def pause_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
-):
+async def pause_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
     """Pause the task"""
-    task = await read_task(task_collection, scheduler, content_collection, id)
+    task = await read_task(task_collection, scheduler, id)
     task = TaskModelView.model_validate(task)
 
     job: Job = scheduler.get_job(task.job_id)
@@ -164,15 +153,13 @@ async def pause_task(
     if update_result.modified_count == 1:
         """it changed"""
         pass
-    return await read_task(task_collection, scheduler, content_collection, id)
+    return await read_task(task_collection, scheduler, id)
 
 
 @router.get("/{id}/resume", responses=responses)
-async def resume_task(
-    task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
-):
+async def resume_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
     """Resume the task"""
-    task = await read_task(task_collection, scheduler, content_collection, id)
+    task = await read_task(task_collection, scheduler, id)
     task = TaskModelView.model_validate(task)
 
     job: Job = scheduler.get_job(task.job_id)
@@ -182,19 +169,18 @@ async def resume_task(
     if update_result.modified_count == 1:
         """it changed"""
         pass
-    return await read_task(task_collection, scheduler, content_collection, id)
+    return await read_task(task_collection, scheduler, id)
 
 
 @router.put("/{id}", response_model=TaskModelView, responses=responses)
 async def update_task(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
-    content_collection: DepContentCollection,
     id: TaskId,
     task: TaskModelUpdate,
 ):
     """Update a task"""
-    old = await read_task(task_collection, scheduler, content_collection, id)
+    old = await read_task(task_collection, scheduler, id)
     old = TaskModelView.model_validate(old)
 
     # schedule the task
@@ -221,9 +207,9 @@ async def update_task(
 
         job: Job = scheduler.get_job(old.job_id)
         job.reschedule(trigger)
-        await pause_task(task_collection, scheduler, content_collection, id)
+        await pause_task(task_collection, scheduler, id)
 
     task = task.model_dump(exclude_none=True)
     if len(task) >= 1:
         await task_collection.update_one({"_id": id}, {"$set": jsonable_encoder(task)})
-    return await read_task(task_collection, scheduler, content_collection, id)
+    return await read_task(task_collection, scheduler, id)
