@@ -28,11 +28,15 @@ async def validate_config(config: AppConfigModel) -> bool:
     return True
 
 
-@router.post("/", response_model=AppConfigModel)
+@router.post(
+    "/", status_code=201, response_model=AppConfigModel, responses={409: {"description": "Already have settings"}}
+)
 async def create_config(collection: DepConfigCollection, config: AppConfigModel = Body(...)):
     latest = await collection.find_one()
     if latest is not None:
-        raise HTTPException(status_code=409, detail="already have settings, please use PUT or DELETE")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="already have settings, please use PUT or DELETE"
+        )
 
     await validate_config(config)
     config_json = jsonable_encoder(config)
@@ -42,12 +46,16 @@ async def create_config(collection: DepConfigCollection, config: AppConfigModel 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_setting)
 
 
-@router.get("/", response_description="Get Config", response_model=AppConfigModel)
+responses = {404: {"description": "No config found"}}
+
+
+@router.get("/", response_model=AppConfigModel, responses=responses)
 async def api_get_config(_config: DepAppConfig):
+    """Get Config"""
     return _config.model_dump()
 
 
-@router.put("/", response_model=AppConfigModel)
+@router.put("/", response_model=AppConfigModel, responses=responses)
 async def update_config(
     collection: DepConfigCollection, oldconfig: DepAppConfig, config: AppConfigModelUpdate = Body(...)
 ):
@@ -72,7 +80,7 @@ async def update_config(
     raise HTTPException(status_code=404, detail="No config found")
 
 
-@router.delete("/")
+@router.delete("/", response_model=bool, responses=responses)
 async def delete_config(collection: DepConfigCollection):
     config = await collection.find_one()
     if not config:
@@ -84,25 +92,6 @@ async def delete_config(collection: DepConfigCollection):
     delete_result = await collection.delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
-        return JSONResponse(status_code=status.HTTP_200_OK, content="Deleted")
+        return True
 
     raise HTTPException(status_code=404, detail="Nothing to delete")
-
-
-# @asynccontextmanager
-# async def get_spammer(app_config: DepAppConfig):
-#     smtpconfig = app_config.smtp
-
-#     if not smtpconfig.enable:
-#         yield None
-#     else:
-#         spammer = EmailSpammer(
-#             smtpconfig.username,
-#             smtpconfig.account,
-#             smtpconfig.password,
-#             smtpconfig.server,
-#             smtpconfig.port,
-#             useSSL=smtpconfig.useSSL,
-#         )
-
-#         yield spammer

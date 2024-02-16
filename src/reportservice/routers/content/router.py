@@ -20,18 +20,21 @@ from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
 from ..common import DepEmailSpammer
 
 router = APIRouter()
+responses = {404: {"description": "No content found"}}
 
 
-@router.get("/", response_description="Get all contents", response_model=List[ContentModel])
+@router.get("/", response_model=List[ContentModel])
 async def list_contents(collection: DepContentCollection, offset: int = 0, limit: int = 0):
+    """Get all contents"""
     triggers = []
     for doc in await collection.find().skip(offset).limit(limit).to_list(100):
         triggers.append(doc)
     return triggers
 
 
-@router.get("/{id}", response_description="Get a content by id", response_model=ContentModel)
+@router.get("/{id}", response_model=ContentModel, responses=responses)
 async def get_content(collection: DepContentCollection, id: ContentId):
+    """Get a content by id"""
     content = await collection.find_one({"_id": id})
     if content is not None:
         return content
@@ -39,12 +42,9 @@ async def get_content(collection: DepContentCollection, id: ContentId):
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 
 
-@router.post(
-    "/",
-    description="Create a content without an excel file. Please upload the excel file in another query if needed",
-    response_model=ContentModel,
-)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=ContentModel)
 async def create_content(collection: DepContentCollection, content: ContentModelCreate):
+    """Create a content without an excel file. Please upload the excel file in another query if needed"""
     if (existed := await collection.find_one({"_id": content.id})) is not None:
         raise HTTPException(status_code=404, detail=f"Content {existed['_id']} existed")
 
@@ -57,9 +57,9 @@ async def create_content(collection: DepContentCollection, content: ContentModel
 
 @router.post(
     "/{id}/upload",
-    description="Upload the excel file of the content",
-    response_description="return true if wrote to db",
+    response_description="Return True if wrote to db",
     response_model=bool,
+    responses=responses,
 )
 async def upload_excel(collection: DepContentCollection, id: ContentId, excelfile: UploadFile = File(...)):
     """upload the excel file for the content.\n
@@ -91,8 +91,9 @@ async def upload_excel(collection: DepContentCollection, id: ContentId, excelfil
     return result.acknowledged
 
 
-@router.get("/{id}/download", description="Download the excel file of the content")
+@router.get("/{id}/download", responses=responses)
 async def download_excel(collection: DepContentCollection, id: ContentId):
+    """Download the excel file of the content"""
     content = await collection.find_one({"_id": id})
 
     if content is None:
@@ -113,7 +114,7 @@ async def download_excel(collection: DepContentCollection, id: ContentId):
 
 @router.delete(
     "/{id}",
-    response_description="delete a content which linked with no task. If there are tasks using this content, abort and raise error",
+    responses={**responses, 400: {"description": "There are tasks using this content, abort"}},
 )
 async def delete_content(content_collection: DepContentCollection, task_collection: DepTaskCollection, id: ContentId):
     """delete a content which linked with no task. If there are tasks using this content, abort and raise error"""
@@ -132,7 +133,7 @@ async def delete_content(content_collection: DepContentCollection, task_collecti
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 
 
-@router.get("/{id}/tasks", response_description="Get all tasks of a content", response_model=List[TaskId])
+@router.get("/{id}/tasks", response_model=List[TaskId], responses=responses)
 async def get_tasks_of_content(
     content_collection: DepContentCollection,
     task_collection: DepTaskCollection,
@@ -140,6 +141,7 @@ async def get_tasks_of_content(
     offset: int = 0,
     limit: int = 0,
 ):
+    """Get all tasks of a content"""
     content = await get_content(content_collection, id=id)
     content = ContentModel.model_validate(content)
     tasks = []
@@ -148,8 +150,9 @@ async def get_tasks_of_content(
     return tasks
 
 
-@router.put("/{id}", response_description="Update a content")
+@router.put("/{id}", responses=responses)
 async def update_content(content_collection: DepContentCollection, id: ContentId, content: ContentModelUpdate):
+    """Update a content"""
     # remove None fields
     content = {k: v for k, v in content.model_dump().items() if v is not None}
 
@@ -167,7 +170,7 @@ async def update_content(content_collection: DepContentCollection, id: ContentId
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 
 
-@router.get("/{id}/query", response_description="Query the content", response_model=ContentQueryResult)
+@router.get("/{id}/query", response_description="Query Result", response_model=ContentQueryResult, responses=responses)
 async def query_content(
     content_collection: DepContentCollection,
     app_config: DepAppConfig,
@@ -189,7 +192,9 @@ async def query_content(
     return query_result
 
 
-@router.get("/{id}/render", response_description="Render the content", response_model=ContentModelRendered)
+@router.get(
+    "/{id}/render", response_description="Render Result", response_model=ContentModelRendered, responses=responses
+)
 async def query_render_content(
     content_collection: DepContentCollection,
     app_config: DepAppConfig,
@@ -209,7 +214,7 @@ async def query_render_content(
     return text
 
 
-@router.get("/{id}/render_and_send", response_description="Render the content, and then send")
+@router.get("/{id}/render_and_send", response_description="Return the SMTP status", responses=responses)
 async def render_and_send(
     content_collection: DepContentCollection,
     app_config: DepAppConfig,

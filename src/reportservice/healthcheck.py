@@ -39,7 +39,7 @@ class HealthCheck(BaseModel):
     checks: CheckInfo
 
 
-async def healthcheck(app: FastAPI) -> HealthCheck:
+async def logic_healthcheck(app: FastAPI) -> HealthCheck:
     pid = os.getpid()
     process = psutil.Process(pid)
     memory_info = process.memory_info()
@@ -59,6 +59,6 @@ async def healthcheck(app: FastAPI) -> HealthCheck:
 
     checks = CheckInfo(status=status, data=CheckData(system_info=sysinfo, detail=detail))
 
-    healthcheck = HealthCheck(name="reportservice", version="0.0.5", checks=checks)
+    healthcheck = HealthCheck(name="reportservice", version="0.0.6", checks=checks)
 
     return healthcheck

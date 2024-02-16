@@ -15,6 +15,7 @@ async def api_get_inout_count(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
+    """Get the count of people represented in a given time range"""
     return await get_inout_count(bodyfacename_collection, begin, end)
 
 
@@ -24,6 +25,7 @@ async def api_get_people_count(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> int:
+    """Count all people in the database"""
     return await get_people_count(staff_collection, begin, end)
 
 
@@ -36,6 +38,7 @@ async def api_get_people_inout(
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
 ) -> PersonInoutCollection:
+    """Query the first and last recognition time of each staffcode in the database"""
     peopleinout = await get_people_inout(
         staff_collection, bodyfacename_collection, query_params=query_params, begin=begin, end=end, logger=logger
     )

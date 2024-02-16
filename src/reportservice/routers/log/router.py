@@ -18,6 +18,7 @@ async def list_logs(
     end: datetime = datetime.now() + timedelta(days=1),
     level: LogLevelEnum = LogLevelEnum.NOTSET,
 ):
+    """Get logs by time range, level and id"""
     query = {"logtime": {"$gt": begin, "$lte": end}}
     if id is not None:
         query["metadata.uid"] = id

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from .healthcheck import HealthCheck, healthcheck
+from .healthcheck import HealthCheck, logic_healthcheck
 from .settings import settings
 from .customlog import formatter
 
@@ -119,5 +119,6 @@ app.include_router(log_router, prefix="/log", tags=["log"])
 
 
 @app.get("/")
-async def api_healthcheck(request: Request) -> HealthCheck:
-    return await healthcheck(request.app)
+async def health_check(request: Request) -> HealthCheck:
+    """health check"""
+    return await logic_healthcheck(request.app)

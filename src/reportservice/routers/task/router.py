@@ -37,9 +37,10 @@ async def remove_orphan_jobs(task_collection: DepTaskCollection, scheduler: DepS
 
 
 router = APIRouter(dependencies=[Depends(remove_orphan_jobs)])
+responses = {404: {"description": "No task found"}}
 
 
-@router.post("/", response_description="Add new task", response_model=TaskModelView)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=TaskModelView)
 async def create_task(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
@@ -47,6 +48,7 @@ async def create_task(
     app_setting: DepAppSettings,
     task: TaskModelCreate = Body(...),
 ):
+    """Create a new task"""
     # schedule the task
     if task.trigger.type == "cron":
         _trigger: CronTriggerModel = task.trigger
@@ -90,7 +92,7 @@ async def create_task(
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_task)
 
 
-@router.get("/", response_description="Get all tasks", response_model=List[TaskModelView])
+@router.get("/", response_model=List[TaskModelView])
 async def list_tasks(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
@@ -98,6 +100,7 @@ async def list_tasks(
     offset: int = 0,
     limit: int = 0,
 ):
+    """Get all tasks"""
     tasks = []
     async for atask in task_collection.find().skip(offset).limit(limit):
         id = atask["_id"]
@@ -112,10 +115,11 @@ async def list_tasks(
     return tasks
 
 
-@router.get("/{id}", response_description="Get task with id", response_model=TaskModelView)
+@router.get("/{id}", response_model=TaskModelView, responses=responses)
 async def read_task(
     task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
+    """Get task with id"""
     task = await task_collection.find_one({"_id": id})
     if task is None:
         raise HTTPException(status_code=404, detail=f"Task {id} not found")
@@ -129,7 +133,7 @@ async def read_task(
     return task
 
 
-@router.delete("/{id}", response_description="Detele a task")
+@router.delete("/{id}", response_model=bool, responses=responses)
 async def delete_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
     task = await task_collection.find_one({"_id": id})
     if not task:
@@ -145,10 +149,11 @@ async def delete_task(task_collection: DepTaskCollection, scheduler: DepSChedule
     raise HTTPException(status_code=404, detail=f"Task {id} not found")
 
 
-@router.get("/{id}/pause", response_description="Pause the task")
+@router.get("/{id}/pause", responses=responses)
 async def pause_task(
     task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
+    """Pause the task"""
     task = await read_task(task_collection, scheduler, content_collection, id)
     task = TaskModelView.model_validate(task)
 
@@ -162,10 +167,11 @@ async def pause_task(
     return await read_task(task_collection, scheduler, content_collection, id)
 
 
-@router.get("/{id}/resume", response_description="Resume the task")
+@router.get("/{id}/resume", responses=responses)
 async def resume_task(
     task_collection: DepTaskCollection, scheduler: DepSCheduler, content_collection: DepContentCollection, id: TaskId
 ):
+    """Resume the task"""
     task = await read_task(task_collection, scheduler, content_collection, id)
     task = TaskModelView.model_validate(task)
 
@@ -179,7 +185,7 @@ async def resume_task(
     return await read_task(task_collection, scheduler, content_collection, id)
 
 
-@router.put("/{id}", response_description="Update a task", response_model=TaskModelView)
+@router.put("/{id}", response_model=TaskModelView, responses=responses)
 async def update_task(
     task_collection: DepTaskCollection,
     scheduler: DepSCheduler,
@@ -187,6 +193,7 @@ async def update_task(
     id: TaskId,
     task: TaskModelUpdate,
 ):
+    """Update a task"""
     old = await read_task(task_collection, scheduler, content_collection, id)
     old = TaskModelView.model_validate(old)
 
