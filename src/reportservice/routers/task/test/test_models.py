@@ -7,6 +7,7 @@ from ..models import (
     IntervalTriggerModel,
     DateTriggerModel,
     TaskModelBase,
+    TaskModel,
     TaskModelUpdate,
     TaskModelCreate,
 )
@@ -72,7 +73,7 @@ def goodtrigger():
 def test_task_model_base(goodtrigger):
     content_id = "1112131415161718191A1B1C1D1E1F"
 
-    task = TaskModelBase(
+    TaskModelBase(
         content_id=content_id,
         name="My important task",
         description="just an example task",
@@ -80,9 +81,6 @@ def test_task_model_base(goodtrigger):
         timeout=1,
         trigger=goodtrigger,
     )
-
-    with pytest.raises(ValidationError):
-        task.id = "abc"
 
     with pytest.raises(ValidationError):
         TaskModelBase(
@@ -93,6 +91,23 @@ def test_task_model_base(goodtrigger):
             timeout=1,
             trigger="* * * * *",
         )
+
+
+def test_task_model(goodtrigger):
+    content_id = "1112131415161718191A1B1C1D1E1F"
+
+    task = TaskModel(
+        content_id=content_id,
+        name="My important task",
+        description="just an example task",
+        enable=False,
+        timeout=1,
+        trigger=goodtrigger,
+    )
+
+    # testcase: change frozen value
+    with pytest.raises(ValidationError):
+        task.id = "abc"
 
 
 def test_task_model_update():

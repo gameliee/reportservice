@@ -32,7 +32,7 @@ async def validate_config(config: AppConfigModel) -> bool:
 async def create_config(collection: DepConfigCollection, config: AppConfigModel = Body(...)):
     latest = await collection.find_one()
     if latest is not None:
-        raise HTTPException(status_code=303, detail="already have settings, please use PUT or DELETE")
+        raise HTTPException(status_code=409, detail="already have settings, please use PUT or DELETE")
 
     await validate_config(config)
     config_json = jsonable_encoder(config)

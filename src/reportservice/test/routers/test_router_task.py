@@ -9,7 +9,7 @@ PREFIX = "/task"
 
 
 @pytest.fixture(scope="module")
-def fakecontentid(testclient) -> str:
+def fakecontentid(testclient):
     testid = str(uuid.uuid4())
     payload = json.dumps(
         {
@@ -34,12 +34,28 @@ def fakecontentid(testclient) -> str:
     assert response.status_code == 200
 
 
-@pytest.fixture(scope="module")
-def createtesttask(testclient, fakecontentid: str, testtaskid: str) -> str:  # noqa: F811
-    testid = testtaskid
+def test_create_task(testclient, fakecontentid: str):
     payload = json.dumps(
         {
-            "_id": testid,
+            "actual_sent": "false",
+            "content_id": fakecontentid,
+            "description": "just an example task",
+            "name": "My important task",
+            "retries": 1,
+            "trigger": {"cron": "* * * * *"},
+        }
+    )
+    response = testclient.post(f"{PREFIX}/", data=payload)
+    assert response.status_code == 201, response.json()
+    testid = response.json()["_id"]
+    response = testclient.delete(f"{PREFIX}/{testid}")
+    assert response.status_code == 200, response.json()
+
+
+@pytest.fixture(scope="module")
+def createtesttask(testclient, fakecontentid: str):  # noqa: F811
+    payload = json.dumps(
+        {
             "actual_sent": "false",
             "content_id": fakecontentid,
             "description": "just an example task",
@@ -50,6 +66,7 @@ def createtesttask(testclient, fakecontentid: str, testtaskid: str) -> str:  # n
     )
     response = testclient.post(f"{PREFIX}/", data=payload)
     assert response.status_code == 201, response.json()
+    testid = response.json()["_id"]
     yield testid
     response = testclient.delete(f"{PREFIX}/{testid}")
     assert response.status_code == 200, response.json()
@@ -58,10 +75,10 @@ def createtesttask(testclient, fakecontentid: str, testtaskid: str) -> str:  # n
 def test_content_get_tasks(testclient: TestClient, createtesttask: str, fakecontentid: str):
     response = testclient.get(f"{CONTENT_PREFIX}/{fakecontentid}/tasks")
     assert response.status_code == 200
-    tasks = response.json()
-    assert len(tasks) == 1
-    task = tasks[0]
-    assert task["_id"] == createtesttask
+    taskids = response.json()
+    assert len(taskids) == 1
+    taskid = taskids[0]
+    assert taskid == createtesttask
 
 
 def test_list_tasks(testclient: TestClient):

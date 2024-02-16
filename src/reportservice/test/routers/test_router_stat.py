@@ -1,12 +1,11 @@
 import json
 import pytest
 from fastapi.testclient import TestClient
-from .test_router_config import generate_conf, true_config
 
 PREFIX = "/stat"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def _payload(test_time):
     begin, end = test_time
     payload = {"begin": begin.isoformat(), "end": end.isoformat()}
@@ -16,16 +15,16 @@ def _payload(test_time):
 def test_api_get_inout_count(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     response = testclient.get(f"{PREFIX}/inout", params=_payload)
     assert "2" == response.text
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
 
 def test_api_get_people_count(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     response = testclient.get(f"{PREFIX}/people", params=_payload)
     assert response.text == "723"
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
 
 def test_api_get_people_inout(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     body = {"staff_codes": ["abc"]}
     response = testclient.post(f"{PREFIX}/people_inout", params=_payload, data=json.dumps(body))
-    assert response.status_code == 200, response.text
+    assert response.status_code == 200, response.json()

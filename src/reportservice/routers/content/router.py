@@ -7,12 +7,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from .excel import read_excel_validate, ExcelInvalidException, ExcelColumn
 from .models import (
+    ContentModel,
     ContentModelCreate,
     ContentModelRendered,
     ContentModelUpdate,
     ContentQueryResult,
 )
-from ..models import ContentModel, QueryParamters, ContentId, TaskModelBase
+from ..models import TaskId, QueryParamters, ContentId
 from .content import render, send, query
 from ..common import DepAppConfig, DepContentCollection, DepTaskCollection
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
@@ -30,7 +31,7 @@ async def list_contents(collection: DepContentCollection, offset: int = 0, limit
 
 
 @router.get("/{id}", response_description="Get a content by id", response_model=ContentModel)
-async def get_content(collection: DepContentCollection, id):
+async def get_content(collection: DepContentCollection, id: ContentId):
     content = await collection.find_one({"_id": id})
     if content is not None:
         return content
@@ -60,7 +61,7 @@ async def create_content(collection: DepContentCollection, content: ContentModel
     response_description="return true if wrote to db",
     response_model=bool,
 )
-async def upload_excel(collection: DepContentCollection, id, excelfile: UploadFile = File(...)):
+async def upload_excel(collection: DepContentCollection, id: ContentId, excelfile: UploadFile = File(...)):
     """upload the excel file for the content.\n
     NOTE: when upload excel file, the content will update its staff_codes"""
     excel = await excelfile.read()
@@ -91,7 +92,7 @@ async def upload_excel(collection: DepContentCollection, id, excelfile: UploadFi
 
 
 @router.get("/{id}/download", description="Download the excel file of the content")
-async def download_excel(collection: DepContentCollection, id):
+async def download_excel(collection: DepContentCollection, id: ContentId):
     content = await collection.find_one({"_id": id})
 
     if content is None:
@@ -131,7 +132,7 @@ async def delete_content(content_collection: DepContentCollection, task_collecti
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 
 
-@router.get("/{id}/tasks", response_description="Get all tasks of a content", response_model=List[TaskModelBase])
+@router.get("/{id}/tasks", response_description="Get all tasks of a content", response_model=List[TaskId])
 async def get_tasks_of_content(
     content_collection: DepContentCollection,
     task_collection: DepTaskCollection,
@@ -143,12 +144,12 @@ async def get_tasks_of_content(
     content = ContentModel.model_validate(content)
     tasks = []
     async for doc in task_collection.find({"content_id": content.id}).skip(offset).limit(limit):
-        tasks.append(doc)
+        tasks.append(TaskId(doc["_id"]))
     return tasks
 
 
 @router.put("/{id}", response_description="Update a content")
-async def update_content(content_collection: DepContentCollection, id, content: ContentModelUpdate):
+async def update_content(content_collection: DepContentCollection, id: ContentId, content: ContentModelUpdate):
     # remove None fields
     content = {k: v for k, v in content.model_dump().items() if v is not None}
 
@@ -173,7 +174,7 @@ async def query_content(
     staff_collection: DepStaffCollection,
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
-    id: str,
+    id: ContentId,
     query_date: Optional[datetime] = None,
 ):
     """Query the content with the data of query_date, default for today"""
@@ -195,7 +196,7 @@ async def query_render_content(
     staff_collection: DepStaffCollection,
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
-    id: str,
+    id: ContentId,
     render_date: Optional[datetime] = None,
 ):
     """Render the content with the data of render_date, default for today"""
@@ -216,7 +217,7 @@ async def render_and_send(
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
     spammer_getter: DepEmailSpammer,
-    id: str,
+    id: ContentId,
     render_date: Optional[datetime] = None,
 ):
     """Render the content with the data of render_date, then send"""

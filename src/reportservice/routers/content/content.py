@@ -10,9 +10,8 @@ from ..stat import (
     get_should_checkinout_count,
 )
 from ..common import AsyncEmailSpammer
-from ..models import ContentModel
 from .excel import fill_personinout_to_excel, excel_to_html, convert_personinout_to_excel
-from .models import ContentModelRendered, ContentQueryResult
+from .models import ContentModel, ContentModelRendered, ContentQueryResult
 
 
 def get_weekday_vn(today):

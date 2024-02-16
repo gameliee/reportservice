@@ -3,18 +3,15 @@ import uuid
 from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
-from .test_router_config import generate_conf, true_config
 
 PREFIX = "/content"
-created = [False, 0]
 
 
 @pytest.fixture(scope="session")
-def createtestcontent(testclient, testcontentid) -> str:
+def createtestcontent(testclient, generate_conf):  # noqa: F811
     payload = json.dumps(
         {
-            "_id": testcontentid,
-            "name": "example content",
+            "name": "test content",
             "description": "just an example content",
             "to": ["example@example.com"],
             "checkin_begin": "2000-01-01 07:00:00",
@@ -26,15 +23,12 @@ def createtestcontent(testclient, testcontentid) -> str:
             "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
         }
     )
-    if created[0] is False:
-        response = testclient.post(f"{PREFIX}/", data=payload)
-        assert response.status_code == 201
-        created[0] = True
+    response = testclient.post(f"{PREFIX}/", data=payload)
+    assert response.status_code == 201
+    testcontentid = response.json()["_id"]
     yield testcontentid
-    if created[0] is True:
-        response = testclient.delete(f"{PREFIX}/{testcontentid}")
-        assert response.status_code == 200
-        created[0] = False
+    response = testclient.delete(f"{PREFIX}/{testcontentid}")
+    assert response.status_code == 200
 
 
 def test_list_contents(testclient: TestClient):
@@ -43,11 +37,13 @@ def test_list_contents(testclient: TestClient):
 
 
 def test_get_content1(testclient: TestClient):
+    # testcase: get a non-exist content
     response = testclient.get(f"{PREFIX}/non")
-    assert response.status_code == 404
+    assert response.status_code == 404, response.json()
 
 
-def test_create_content(testclient: TestClient, createtestcontent: str):
+def test_create_duplicated_content(testclient: TestClient, createtestcontent: str):
+    # testcase: create a duplicated content
     payload = json.dumps(
         {
             "_id": createtestcontent,
@@ -63,13 +59,16 @@ def test_create_content(testclient: TestClient, createtestcontent: str):
             "attach_name_template": "{{year}}{{month}}{{date}}-{{hour}}{{min}}{{sec}}.xlsx",
         }
     )
+
     response = testclient.post(f"{PREFIX}/", data=payload)
-    assert response.status_code == 404
+    assert response.status_code == 404, response.json()
 
 
 def test_get_content2(testclient: TestClient, createtestcontent: str):
     response = testclient.get(f"{PREFIX}/{createtestcontent}")
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
+    content = response.json()
+    assert content["_id"] == createtestcontent
 
 
 def test_download_excel1(testclient: TestClient, createtestcontent: str):
@@ -78,8 +77,10 @@ def test_download_excel1(testclient: TestClient, createtestcontent: str):
 
 
 def test_content_get_tasks1(testclient: TestClient, createtestcontent: str):
-    response = testclient.get(f"{PREFIX}/aaa/tasks")
-    assert response.status_code == 404
+    # testcase: no task
+    task_id = str(uuid.uuid4())
+    response = testclient.get(f"{PREFIX}/{task_id}/tasks")
+    assert response.status_code == 404, response.json()
 
 
 def test_upload_excel_fail(testclient: TestClient, createtestcontent: str, excelfile):
@@ -223,5 +224,5 @@ def test_render_content2(
 
 def test_get_tasks2(testclient: TestClient, createtestcontent: str):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/tasks")
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     assert response.json() == []

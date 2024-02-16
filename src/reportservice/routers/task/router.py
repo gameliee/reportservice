@@ -12,15 +12,14 @@ from ..content.router import get_content
 from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
 from .task import render_and_send_today
 from .models import (
+    TaskModel,
     TaskModelCreate,
     TaskModelView,
     TaskModelUpdate,
-    ContentModel,
     JobModel,
     CronTriggerModel,
     IntervalTriggerModel,
     DateTriggerModel,
-    TriggerModel,
 )
 
 
@@ -69,19 +68,23 @@ async def create_task(
     else:
         raise HTTPException(status_code=422, detail=f"trigger type {task.trigger.type} not supported")
 
+    # must check if this content_id is valid
     content = await get_content(content_collection, id=task.content_id)
-    content = ContentModel.model_validate(content)
+    content_id = content["_id"]
 
     # always create task in pause state
     task.enable = False
 
-    jobid = str(task.job_id)
+    # convert the task to storage model
+    storage_task = TaskModel(**task.model_dump())
 
-    job: Job = scheduler.add_job(render_and_send_today, trigger, [content.id, app_setting, _trigger.timeout], id=jobid)
+    jobid = str(storage_task.job_id)
+
+    job: Job = scheduler.add_job(render_and_send_today, trigger, [content_id, app_setting, _trigger.timeout], id=jobid)
     assert not job.pending
     job.pause()  # always pause after create
 
-    task_serilzed = jsonable_encoder(task)
+    task_serilzed = jsonable_encoder(storage_task)
     new_task = await task_collection.insert_one(task_serilzed)
     created_task = await task_collection.find_one({"_id": new_task.inserted_id})
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_task)

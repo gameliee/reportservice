@@ -1,9 +1,12 @@
+import uuid
 from enum import Enum
 from typing import Optional, List, Annotated, Literal, Union
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, NonNegativeInt, AwareDatetime, model_validator
 from apscheduler.job import Job
-from ..models import TaskModelBase, TriggerModel, ContentModel
+from ..models import TaskId
+
+JobId = Annotated[str, "job_id"]
 
 
 class TriggerModelType(str, Enum):
@@ -13,7 +16,7 @@ class TriggerModelType(str, Enum):
     INVALID = "invalid"
 
 
-class TriggerModelBase(TriggerModel):
+class TriggerModelBase(BaseModel):
     jitter: Optional[NonNegativeInt] = Field(None, description="jitter")
     timeout: Optional[NonNegativeInt] = Field(60, description="timeout in seconds")
 
@@ -61,6 +64,35 @@ TriggerType = Annotated[
     Union[CronTriggerModel, IntervalTriggerModel, DateTriggerModel], Field(union_mode="left_to_right")
 ]
 
+"""Task models"""
+
+
+class TaskModelBase(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    content_id: str
+
+    name: str = Field(...)
+    description: Optional[str] = Field(None, description="Description")
+    enable: bool = False  # by default, just add, don't send
+    timeout: int = Field(30, description="timeout in seconds")
+    trigger: TriggerType = Field(..., description="trigger for this task")
+
+    def __init__(self, **data):
+        super().__init__(**data, id=str(uuid.uuid4()))
+
+
+class TaskModel(TaskModelBase):
+    """model for storage"""
+
+    id: TaskId = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        alias="_id",
+        frozen=True,
+        description="the id in the database of task, never attempt to change me",
+    )
+    job_id: JobId = Field(default_factory=lambda: str(uuid.uuid4()), description="the jobid of apscheduler")
+
 
 class TaskModelUpdate(BaseModel):
     name: Optional[str] = None
@@ -77,29 +109,23 @@ class TaskModelUpdate(BaseModel):
     )
 
 
-class TaskModelView(TaskModelBase):
+class TaskModelView(TaskModel):
     """TaskModel for viewing"""
 
-    trigger: TriggerType
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    content: ContentModel
     job: JobModel
 
 
 class TaskModelCreate(TaskModelBase):
-    trigger: TriggerType
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "name": "My important task",
                 "description": "just an example task",
                 "trigger": {"cron": "* * * * *"},
-                "timeout": 1,
+                "retries": 1,
                 "content_id": "1112131415161718191A1B1C1D1E1F",
                 "enable": "false",
             }
         }
     )
-
-
-# TriggerModel = Union[CronTriggerModel, IntervalTriggerModel, DateTriggerModel]
