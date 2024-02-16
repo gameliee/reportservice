@@ -1,7 +1,8 @@
 import json
+import time
 import uuid
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from .test_router_content import PREFIX as CONTENT_PREFIX
 
@@ -88,7 +89,7 @@ def test_list_tasks(testclient: TestClient):
 
 def test_read_task1(testclient: TestClient):
     response = testclient.get(f"{PREFIX}/non")
-    assert response.status_code == 404
+    assert response.status_code == 404, response.json()
 
 
 def test_read_task2(testclient: TestClient, createtesttask: str):
@@ -311,3 +312,61 @@ def test_next_runtime(testclient: TestClient, createtesttask: str):
     assert next_run_time.hour == 0
     assert next_run_time.minute == 0
     assert next_run_time.second == 0
+
+
+@pytest.mark.skip(reason="pause and resume is not supported for CustomDateTrigger")
+def test_datetrigger(testclient: TestClient, createtesttask: str):
+    """The date trigger is quite tricky because after the apscheduler run the job, it will be removed from the jobstore"""
+    response = testclient.get(f"{PREFIX}/{createtesttask}")
+    assert response.status_code == 200, response.json()
+
+    # Setup
+    utc_dt = datetime.now(timezone.utc)  # UTC time
+    now = utc_dt.astimezone()  # local time
+    run_date = now + timedelta(seconds=1)
+    payload = json.dumps({"trigger": {"run_date": run_date.isoformat()}})
+    response = testclient.put(f"{PREFIX}/{createtesttask}", data=payload)
+    assert response.status_code == 200, response.json()
+    ret = response.json()
+    assert ret["enable"] is False
+    assert ret["job"]["running"] is False
+    response = testclient.get(f"{PREFIX}/{createtesttask}/resume")
+    assert response.status_code == 200, response.json()
+    ret = response.json()
+    assert ret["enable"] is True
+    assert ret["job"]["running"] is True
+    next_run_time = ret["job"]["next_run_time"]
+    next_run_time = datetime.fromisoformat(next_run_time)
+    delta = next_run_time - run_date
+    assert abs(delta.total_seconds()) < 0.01, "Timedelta is larger than epsilon"
+
+    # wait a second
+    time.sleep(1)
+    # ensure the task has been run
+    response = testclient.get(f"{PREFIX}/{createtesttask}")
+    assert response.status_code == 200, response.json()
+    ret = response.json()
+    assert ret["failed_count"] == 0
+    assert ret["enable"] is True
+    assert ret["job"]["running"] is True
+    next_run_time = ret["job"]["next_run_time"]
+    next_run_time = datetime.fromisoformat(next_run_time)
+    delta = next_run_time - run_date
+    assert abs(delta.total_seconds()) < 0.01, "Timedelta is larger than epsilon"
+
+    # now reschedule the task
+    utc_dt = datetime.now(timezone.utc)  # UTC time
+    now = utc_dt.astimezone()  # local time
+    run_date = now + timedelta(seconds=1)
+    payload = json.dumps({"trigger": {"run_date": run_date.isoformat()}})
+    response = testclient.put(f"{PREFIX}/{createtesttask}", data=payload)
+    assert response.status_code == 200, response.json()
+    response = testclient.get(f"{PREFIX}/{createtesttask}/resume")
+    assert response.status_code == 200, response.json()
+    ret = response.json()
+    assert ret["enable"] is True
+    assert ret["job"]["running"] is True, ret["job"]
+    next_run_time = ret["job"]["next_run_time"]
+    next_run_time = datetime.fromisoformat(next_run_time)
+    delta = next_run_time - run_date
+    assert abs(delta.total_seconds()) < 0.01, "Timedelta is larger than epsilon"

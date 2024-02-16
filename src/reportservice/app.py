@@ -13,6 +13,7 @@ from .customlog import formatter
 from .routers.stat.router import router as stat_router
 from .routers.config.router import router as config_router
 from .routers.content.router import router as content_router
+from .routers.task import register_listerner
 from .routers.task.router import router as task_router
 from .routers.log import create_log_collection, MongoHandler
 from .routers.log.router import router as log_router
@@ -80,6 +81,7 @@ async def init_scheduler(app: FastAPI):
     }
 
     app.scheduler = AsyncIOScheduler(jobstores=jobstores, job_defaults=job_defaults)
+    register_listerner(app.scheduler, app.logger)
     app.scheduler.start()
 
 

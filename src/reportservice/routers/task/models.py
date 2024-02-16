@@ -4,6 +4,7 @@ from typing import Optional, List, Annotated, Literal, Union
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, NonNegativeInt, AwareDatetime, model_validator
 from apscheduler.job import Job
+from .customtriggers import CustomDateTrigger
 from ..models import TaskId, ContentId
 
 JobId = Annotated[str, "job_id"]
@@ -49,11 +50,17 @@ class DateTriggerModel(TriggerModelBase):
 
 
 class JobModel(BaseModel):
+    """Model for displaying the job status"""
+
     pending: bool = Field(description="if a job is in pending state, it have not be stored into job storage")
     running: bool
-    next_run_time: Optional[datetime]
+    next_run_time: Optional[AwareDatetime]
 
     def parse_job(job: Job) -> "JobModel":
+        """Parse a job to JobModel. But if a job is a DateTrigger job, it should be treated differently"""
+        if isinstance(job.trigger, CustomDateTrigger) and job.next_run_time == CustomDateTrigger.VERY_BIG_DATE:
+            """if this job was run before"""
+            return JobModel(pending=job.pending, next_run_time=None, running=False)
         jobmodel = JobModel(pending=job.pending, next_run_time=job.next_run_time, running=False)
         jobmodel.running = True if job.next_run_time else False
         return jobmodel

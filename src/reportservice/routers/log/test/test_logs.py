@@ -165,4 +165,4 @@ class TestLogger:
 
         logger = logging.getLogger("just for test")
         logger.addHandler(mongo_handler)
-        logger.debug("running the pipeline", pipeline)
+        logger.debug("running the pipeline %s", pipeline)

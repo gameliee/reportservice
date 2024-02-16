@@ -1,6 +1,8 @@
 from typing import List
+from datetime import datetime
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.date import DateTrigger
 
 
 class CronTriggerWithHoliday(CronTrigger):
@@ -112,3 +114,29 @@ class IntervalTriggerWithHoliday(IntervalTrigger):
     def __setstate__(self, state):
         super().__setstate__(state)
         self.exclude_dates = state.get("exclude_dates", [])
+
+
+class CustomDateTrigger(DateTrigger):
+    """Customize the Date Trigger: never response None to get_next_fire_time"""
+
+    VERY_BIG_DATE = datetime.fromisoformat("9999-01-01 00:00:00+00:00")
+
+    def __init__(self, run_date=None, timezone=None):
+        super().__init__(run_date, timezone)
+        self.already_ran = False
+
+    def get_next_fire_time(self, previous_fire_time, now):
+        if self.already_ran:
+            return CustomDateTrigger.VERY_BIG_DATE
+        else:
+            self.already_ran = True
+            return super().get_next_fire_time(previous_fire_time, now)
+
+    def __getstate__(self):
+        upper = super().__getstate__()
+        upper["already_ran"] = self.already_ran
+        return upper
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self.already_ran = state.get("already_ran", False)

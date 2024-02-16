@@ -10,7 +10,7 @@ from apscheduler.job import Job
 from ..models import TaskId
 from ..common import DepTaskCollection, DepSCheduler, DepContentCollection, DepAppSettings
 from ..content.router import get_content
-from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday
+from .customtriggers import CronTriggerWithHoliday, IntervalTriggerWithHoliday, CustomDateTrigger
 from .task import render_and_send_today
 from .models import (
     TaskModel,
@@ -68,7 +68,7 @@ async def create_task(
         )
     elif task.trigger.type == "date":
         _trigger: DateTriggerModel = task.trigger
-        trigger = DateTrigger(run_date=_trigger.run_date)
+        trigger = CustomDateTrigger(run_date=_trigger.run_date)
     else:
         raise HTTPException(status_code=422, detail=f"trigger type {task.trigger.type} not supported")
 
@@ -231,15 +231,24 @@ async def update_task(
             )
         elif task.trigger.type == "date":
             _trigger: DateTriggerModel = task.trigger
-            trigger = DateTrigger(run_date=_trigger.run_date)
+            trigger = CustomDateTrigger(run_date=_trigger.run_date)
         else:
-            raise HTTPException(status_code=422, detail=f"trigger type {task.trigger.type} not supported")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"trigger type {task.trigger.type} not supported",
+            )
 
         job: Job = scheduler.get_job(old.job_id)
         job.reschedule(trigger)
         await pause_task(task_collection, scheduler, id)
 
     if task.next_run_time is not None:
+        if isinstance(old.trigger, DateTrigger):
+            """change next_run_time of a DateTrigger means nothing"""
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="change next_run_time of a DateTrigger means nothing. Please change the trigger instead.",
+            )
         job: Job = scheduler.get_job(old.job_id)
         job.modify(next_run_time=task.next_run_time)
 
