@@ -37,7 +37,7 @@ async def query(
     in_end = in_begin + content.checkin_duration
     out_begin = datetime.combine(date=query_date.date(), time=content.checkout_begin.time())
     out_end = out_begin + content.checkout_duration
-    people_count = await get_people_count(staff_collection, day_begin, day_end)
+    people_count = await get_people_count(staff_collection)
     # has_sample_count = get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
     checkin_count = await get_inout_count(bodyfacename_collection, in_begin, in_end)
     checkout_count = await get_inout_count(bodyfacename_collection, out_begin, out_end)
@@ -49,7 +49,7 @@ async def query(
         staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end, logger
     )
 
-    should_checkinout_count = await get_should_checkinout_count(staff_collection, day_begin, day_end)
+    should_checkinout_count = await get_should_checkinout_count(staff_collection)
 
     return ContentQueryResult(
         query_time=query_date,

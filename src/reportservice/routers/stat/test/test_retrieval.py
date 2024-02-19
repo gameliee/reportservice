@@ -36,11 +36,7 @@ def fixture_staff_collection(fixture_faceiddb, appconfig: AppConfigModel) -> Asy
 @pytest.mark.asyncio
 async def test_get_people_count(fixture_staff_collection, test_time):
     begin, end = test_time
-    count = await get_people_count(
-        fixture_staff_collection,
-        begin=begin,
-        end=end,
-    )
+    count = await get_people_count(fixture_staff_collection)
     assert count == 723, fixture_staff_collection.name
 
 
