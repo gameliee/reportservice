@@ -1,6 +1,6 @@
 from typing import List
 from datetime import datetime
-from .models import QueryParamters, StaffCodeStr
+from .models import QueryParamters, StaffCodeStr, MongoSampleStateOfStaffModel, MongoStateOfStaffModel
 
 
 def query_find_staff(query_params: QueryParamters):
@@ -191,5 +191,53 @@ def pipeline_count(begin: datetime, end: datetime, threshold: float, has_mask: b
         {"$group": {"_id": "$staff_id"}},
         {"$group": {"_id": None, "count": {"$sum": 1}}},
         {"$project": {"_id": 0, "count": 1}},
+    ]
+    return pipeline
+
+
+def pipeline_count_shoulddiemdanh():
+    pipeline = [
+        {
+            "$match": {
+                "working_state": MongoStateOfStaffModel.active,
+            },
+        },
+        {
+            "$group": {
+                "_id": "staff_code",
+                "count": {
+                    "$sum": 1,
+                },
+            },
+        },
+        {
+            "$project": {
+                "_id": 0,
+            },
+        },
+    ]
+    return pipeline
+
+
+def pipeline_count_has_sample():
+    pipeline = [
+        {
+            "$match": {
+                "sample_state": MongoSampleStateOfStaffModel.ready_to_checkin_checkout,
+            },
+        },
+        {
+            "$group": {
+                "_id": "staff_code",
+                "count": {
+                    "$sum": 1,
+                },
+            },
+        },
+        {
+            "$project": {
+                "_id": 0,
+            },
+        },
     ]
     return pipeline

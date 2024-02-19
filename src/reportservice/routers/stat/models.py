@@ -12,6 +12,8 @@ __all__ = [
     "QueryException",
     "PersonInout",
     "PersonInoutCollection",
+    "MongoSampleStateOfStaffModel",
+    "MongoStateOfStaffModel",
 ]
 
 StaffCodeStr = Annotated[str, "staff code"]

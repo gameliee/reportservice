@@ -3,7 +3,14 @@ from datetime import datetime
 import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
 from .models import QueryParamters, PersonInoutCollection, PersonInout, MongoStaffModel
-from .queries import pipeline_staffs_inou, pipeline_count, query_find_staff, query_find_staff_inout
+from .queries import (
+    pipeline_staffs_inou,
+    pipeline_count,
+    query_find_staff,
+    query_find_staff_inout,
+    pipeline_count_shoulddiemdanh,
+    pipeline_count_has_sample,
+)
 
 
 async def get_people_count(
@@ -16,23 +23,24 @@ async def get_people_count(
     return len(count)
 
 
-async def get_has_sample_count(
-    staff_collection: AsyncIOMotorCollection,
-    bodyfacename_collection: AsyncIOMotorCollection,
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> int:
-    raise NotImplementedError
+async def get_has_sample_count(staff_collection: AsyncIOMotorCollection) -> int:
+    """count the number of people who have face sample in the database"""
+    cursor = staff_collection.aggregate(pipeline_count_has_sample())
+    result = await cursor.to_list(length=1)
+    if result:
+        return result[0]["count"]
+    else:
+        return 0
 
 
-async def get_should_checkinout_count(
-    staff_collection: AsyncIOMotorCollection,
-    begin: datetime = "2023-12-27T00:00:00.000+00:00",
-    end: datetime = "2023-12-27T23:59:59.999+00:00",
-) -> int:
-    return -1
-    # FIXME: implement this
-    raise NotImplementedError("should_diemdanh is not implemented")
+async def get_should_checkinout_count(staff_collection: AsyncIOMotorCollection) -> int:
+    """should_diemdanh: count the number of people who should be reminded to check in/out today."""
+    cursor = staff_collection.aggregate(pipeline_count_shoulddiemdanh())
+    result = await cursor.to_list(length=1)
+    if result:
+        return result[0]["count"]
+    else:
+        return 0
 
 
 async def get_inout_count(

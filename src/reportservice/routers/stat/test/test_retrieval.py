@@ -1,7 +1,13 @@
 from typing import List
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
-from ..retrieval import get_people_count, get_inout_count, get_people_inout
+from ..retrieval import (
+    get_people_count,
+    get_inout_count,
+    get_people_inout,
+    get_has_sample_count,
+    get_should_checkinout_count,
+)
 from ..models import PersonInout, PersonInoutCollection, QueryParamters
 from ...common import AppConfigModel
 from ...common.conftest import appconfig
@@ -83,3 +89,15 @@ async def test_get_people_inout(fixture_staff_collection, fixture_bodyfacename_c
         await get_people_inout(
             fixture_staff_collection, fixture_bodyfacename_collection, avai_staff, begin=None, end=None
         )
+
+
+@pytest.mark.asyncio
+async def test_get_sample_count(fixture_staff_collection):
+    count = await get_has_sample_count(fixture_staff_collection)
+    assert count == 723, fixture_staff_collection.name
+
+
+@pytest.mark.asyncio
+async def test_get_should_checkinout_count(fixture_staff_collection):
+    count = await get_should_checkinout_count(fixture_staff_collection)
+    assert count == 723 - 2, fixture_staff_collection.name
