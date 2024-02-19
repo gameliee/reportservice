@@ -4,7 +4,7 @@ from typing import Optional, List, Annotated, Literal, Union
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, NonNegativeInt, AwareDatetime, model_validator
 from apscheduler.job import Job
-from ..models import TaskId
+from ..models import TaskId, ContentId
 
 JobId = Annotated[str, "job_id"]
 
@@ -18,7 +18,6 @@ class TriggerModelType(str, Enum):
 
 class TriggerModelBase(BaseModel):
     jitter: Optional[NonNegativeInt] = Field(None, description="jitter")
-    timeout: Optional[NonNegativeInt] = Field(60, description="timeout in seconds")
 
 
 class CronTriggerModel(TriggerModelBase):
@@ -70,16 +69,22 @@ TriggerType = Annotated[
 class TaskModelBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    content_id: str
+    content_id: ContentId
 
     name: str = Field(...)
     description: Optional[str] = Field(None, description="Description")
     enable: bool = False  # by default, just add, don't send
-    timeout: int = Field(30, description="timeout in seconds")
+    retries: NonNegativeInt = Field(3, description="number of retries")
+    retries_delay: NonNegativeInt = Field(120, description="delay between retries in seconds")
+    timeout: NonNegativeInt = Field(60, description="timeout in seconds")
     trigger: TriggerType = Field(..., description="trigger for this task")
+    failed_count: NonNegativeInt = Field(0, description="number of consecutive failed, this is for the retry function")
 
-    def __init__(self, **data):
-        super().__init__(**data, id=str(uuid.uuid4()))
+    @model_validator(mode="after")
+    def validate_timeout_smaller_than_retries_delay(self) -> "TaskModelBase":
+        if self.timeout >= self.retries_delay:
+            raise ValueError("timeout should be smaller than to retries_delay")
+        return self
 
 
 class TaskModel(TaskModelBase):
