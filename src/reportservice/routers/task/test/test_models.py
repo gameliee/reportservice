@@ -10,6 +10,7 @@ from ..models import (
     TaskModel,
     TaskModelUpdate,
     TaskModelCreate,
+    TaskModelSearch,
 )
 
 
@@ -186,3 +187,11 @@ def test_task_model_create_date():
     task_create = TaskModelCreate(**create_data)
 
     assert task_create.trigger.run_date == datetime(2022, 1, 1)
+
+
+def test_task_model_search():
+    # testcase: extra parameters
+    search = TaskModelSearch(abc="abc")
+    assert not hasattr(search, "abc")
+    assert search.model_dump(exclude_none=True) == {}
+    assert not search.model_dump(exclude_none=True)  # empty dict

@@ -284,3 +284,30 @@ def test_resume_task(testclient: TestClient, createtesttask: str):
     assert next_run_time.hour == 23
     assert next_run_time.minute == 59
     assert next_run_time.second == 0
+
+
+def test_search_task(testclient: TestClient, createtesttask: str):
+    payload = {"name": "My important task"}
+    response = testclient.post(f"{PREFIX}/search", json=payload)
+    assert response.status_code == 200
+    ret = response.json()
+    assert len(ret) == 1
+    assert ret[0]["_id"] == createtesttask
+
+
+def test_next_runtime(testclient: TestClient, createtesttask: str):
+    payload = {"next_run_time": "2025-01-01 00:00:00"}
+    response = testclient.put(f"{PREFIX}/{createtesttask}", json=payload)
+    assert response.status_code == 200, response.json()
+    ret = response.json()
+    assert ret["enable"] is True
+    assert ret["job"]["running"] is True
+    next_run_time = ret["job"]["next_run_time"]
+    next_run_time = datetime.fromisoformat(next_run_time)
+    assert next_run_time.utcoffset().total_seconds() == 7 * 3600
+    assert next_run_time.year == 2025
+    assert next_run_time.month == 1
+    assert next_run_time.day == 1
+    assert next_run_time.hour == 0
+    assert next_run_time.minute == 0
+    assert next_run_time.second == 0

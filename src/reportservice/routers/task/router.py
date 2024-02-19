@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 from apscheduler.triggers.date import DateTrigger
 from fastapi import APIRouter, Body, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
@@ -16,6 +17,7 @@ from .models import (
     TaskModelCreate,
     TaskModelView,
     TaskModelUpdate,
+    TaskModelSearch,
     JobModel,
     CronTriggerModel,
     IntervalTriggerModel,
@@ -82,7 +84,7 @@ async def create_task(
 
     jobid = str(storage_task.job_id)
 
-    job: Job = scheduler.add_job(render_and_send_today, trigger, [content_id, app_setting, _trigger.timeout], id=jobid)
+    job: Job = scheduler.add_job(render_and_send_today, trigger, [content_id, app_setting, task.timeout], id=jobid)
     assert not job.pending
     job.pause()  # always pause after create
 
@@ -111,8 +113,35 @@ async def list_tasks(
     return tasks
 
 
+@router.post("/search", response_model=List[TaskModelView])
+async def search_tasks(
+    task_collection: DepTaskCollection,
+    scheduler: DepSCheduler,
+    search: Optional[TaskModelSearch] = None,
+    offset: int = 0,
+    limit: int = 0,
+):
+    """Search tasks by conditions"""
+    if search is None:
+        return []
+
+    search_condition = search.model_dump(exclude_none=True)
+    if not search_condition:  # empty dict
+        return []
+
+    tasks = []
+    async for atask in task_collection.find(search_condition).skip(offset).limit(limit):
+        id = atask["_id"]
+        job = scheduler.get_job(atask["job_id"])
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"In task {id}, Job {atask['job_id']} not found")
+        task = TaskModelView(job=JobModel.parse_job(job), **atask)
+        tasks.append(task)
+    return tasks
+
+
 @router.get("/{id}", response_model=TaskModelView, responses=responses)
-async def read_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
+async def read_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId) -> TaskModelView:
     """Get task with id"""
     task = await task_collection.find_one({"_id": id})
     if task is None:
@@ -179,7 +208,7 @@ async def update_task(
     id: TaskId,
     task: TaskModelUpdate,
 ):
-    """Update a task"""
+    """Update a task. Note that if change the trigger, the task need to be resume again"""
     old = await read_task(task_collection, scheduler, id)
     old = TaskModelView.model_validate(old)
 
@@ -209,7 +238,11 @@ async def update_task(
         job.reschedule(trigger)
         await pause_task(task_collection, scheduler, id)
 
-    task = task.model_dump(exclude_none=True)
+    if task.next_run_time is not None:
+        job: Job = scheduler.get_job(old.job_id)
+        job.modify(next_run_time=task.next_run_time)
+
+    task = task.model_dump(exclude_none=True, exclude="next_run_time")  # next_run_time is not in the TaskModel model
     if len(task) >= 1:
         await task_collection.update_one({"_id": id}, {"$set": jsonable_encoder(task)})
     return await read_task(task_collection, scheduler, id)

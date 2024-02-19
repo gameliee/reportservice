@@ -105,6 +105,9 @@ class TaskModelUpdate(BaseModel):
     enable: Optional[bool] = None
     timeout: Optional[int] = None
     trigger: Optional[TriggerType] = None
+    next_run_time: Optional[datetime] = Field(
+        None, description="Change the next_run_time of the task without changing the trigger"
+    )
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -130,6 +133,23 @@ class TaskModelCreate(TaskModelBase):
                 "trigger": {"cron": "* * * * *"},
                 "retries": 1,
                 "content_id": "1112131415161718191A1B1C1D1E1F",
+            }
+        }
+    )
+
+
+class TaskModelSearch(TaskModelUpdate):
+    """Model for search in the database"""
+
+    content_id: Optional[ContentId] = None
+    job_id: Optional[JobId] = None
+    retries: Optional[NonNegativeInt] = None
+    retries_delay: Optional[NonNegativeInt] = None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "description": "you can search by description here",
             }
         }
     )
