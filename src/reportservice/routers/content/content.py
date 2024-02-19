@@ -38,12 +38,10 @@ async def query(
     out_begin = datetime.combine(date=query_date.date(), time=content.checkout_begin.time())
     out_end = out_begin + content.checkout_duration
     people_count = await get_people_count(staff_collection)
-    # has_sample_count = get_has_sample_count(db, staff_collection, bodyfacename_collection, day_begin, day_end), # FIXME:
+    has_sample_count = await get_has_sample_count(staff_collection)
     checkin_count = await get_inout_count(bodyfacename_collection, in_begin, in_end)
     checkout_count = await get_inout_count(bodyfacename_collection, out_begin, out_end)
-    total_count = await get_inout_count(
-        bodyfacename_collection, day_begin, day_end
-    )  # BUG: this is not correct, change to begin of the day to end of the day
+    total_count = await get_inout_count(bodyfacename_collection, day_begin, day_end)
 
     people_inout = await get_people_inout(
         staff_collection, bodyfacename_collection, content.query_parameters, day_begin, day_end, logger
@@ -59,6 +57,7 @@ async def query(
         total_count=total_count,
         people_inout=people_inout,
         should_checkinout_count=should_checkinout_count,
+        has_sample_count=has_sample_count,
     )
 
 
@@ -78,7 +77,7 @@ async def render(
         "weekday_vn": get_weekday_vn(query_result.query_time),
         "weekday_Vn": get_weekday_Vn(query_result.query_time),
         "people_count": query_result.people_count,
-        # "has_sample_count": query_result.has
+        "has_sample_count": query_result.has_sample_count,
         "should_checkinout_count": query_result.should_checkinout_count,
         "checkin_count": query_result.checkin_count,
         "checkout_count": query_result.checkout_count,
