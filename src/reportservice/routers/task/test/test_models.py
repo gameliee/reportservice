@@ -149,14 +149,12 @@ def test_task_model_create_cron():
         "trigger": {"cron": "* * * * *"},
         "timeout": 1,
         "content_id": "1112131415161718191A1B1C1D1E1F",
-        "enable": False,
     }
 
     task_create = TaskModelCreate(**create_data)
 
     assert task_create.name == "My important task"
     assert task_create.description == "just an example task"
-    assert task_create.enable is False
     assert task_create.timeout == 1
     assert task_create.trigger.cron == "* * * * *"
     assert task_create.content_id == "1112131415161718191A1B1C1D1E1F"
@@ -168,12 +166,10 @@ def test_task_model_create_interval():
         "description": "just an example task",
         "trigger": {"interval": 1, "start_time": "2022-01-01T00:00:00"},
         "content_id": "1112131415161718191A1B1C1D1E1F",
-        "enable": True,
     }
 
     task_create = TaskModelCreate(**create_data)
 
-    assert task_create.enable is True
     assert task_create.trigger.interval == 1
     assert task_create.trigger.start_time == datetime(2022, 1, 1)
 

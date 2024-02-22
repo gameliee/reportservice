@@ -73,7 +73,6 @@ class TaskModelBase(BaseModel):
 
     name: str = Field(...)
     description: Optional[str] = Field(None, description="Description")
-    enable: bool = False  # by default, just add, don't send
     retries: NonNegativeInt = Field(3, description="number of retries")
     retries_delay: NonNegativeInt = Field(120, description="delay between retries in seconds")
     timeout: NonNegativeInt = Field(60, description="timeout in seconds")
@@ -97,6 +96,7 @@ class TaskModel(TaskModelBase):
         description="the id in the database of task, never attempt to change me",
     )
     job_id: JobId = Field(default_factory=lambda: str(uuid.uuid4()), description="the jobid of apscheduler")
+    enable: bool = False  # by default, just add, don't send
 
 
 class TaskModelUpdate(BaseModel):
@@ -130,7 +130,6 @@ class TaskModelCreate(TaskModelBase):
                 "trigger": {"cron": "* * * * *"},
                 "retries": 1,
                 "content_id": "1112131415161718191A1B1C1D1E1F",
-                "enable": "false",
             }
         }
     )

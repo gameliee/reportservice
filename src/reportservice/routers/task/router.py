@@ -74,11 +74,11 @@ async def create_task(
     content = await get_content(content_collection, id=task.content_id)
     content_id = content["_id"]
 
-    # always create task in pause state
-    task.enable = False
-
     # convert the task to storage model
     storage_task = TaskModel(**task.model_dump())
+
+    # always create task in pause state
+    storage_task.enable = False
 
     jobid = str(storage_task.job_id)
 
