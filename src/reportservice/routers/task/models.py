@@ -108,6 +108,7 @@ class TaskModelUpdate(BaseModel):
     next_run_time: Optional[datetime] = Field(
         None, description="Change the next_run_time of the task without changing the trigger"
     )
+    failed_count: Optional[NonNegativeInt] = None
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -115,6 +116,12 @@ class TaskModelUpdate(BaseModel):
             }
         }
     )
+
+    @model_validator(mode="after")
+    def validate_trigger_next_run_time(self) -> "TaskModelUpdate":
+        if self.trigger is not None and self.next_run_time is not None:
+            raise ValueError("trigger and next_run_time cannot be changed at the same time")
+        return self
 
 
 class TaskModelView(TaskModel):
