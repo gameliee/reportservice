@@ -1,11 +1,11 @@
-from typing import List, Optional
-from datetime import datetime
-from apscheduler.triggers.date import DateTrigger
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Body, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pymongo.results import UpdateResult
 import apscheduler
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.job import Job
 from ..models import TaskId
 from ..common import DepTaskCollection, DepSCheduler, DepContentCollection, DepAppSettings
@@ -94,6 +94,18 @@ async def create_task(
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_task)
 
 
+def doc_to_taskmodel(doc: Dict, scheduler: BaseScheduler) -> TaskModelView:
+    """Convert a task document (in the database) to TaskModelView"""
+    task = TaskModel.model_validate(doc)
+    job: Job = scheduler.get_job(task.job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"In task {task.id}, Job {task.job_id} not found")
+    else:
+        pass
+    view = TaskModelView(job=JobModel.parse_job(job), **doc)
+    return view
+
+
 @router.get("/", response_model=List[TaskModelView])
 async def list_tasks(
     task_collection: DepTaskCollection,
@@ -102,15 +114,11 @@ async def list_tasks(
     limit: int = 0,
 ):
     """Get all tasks"""
-    tasks = []
-    async for atask in task_collection.find().skip(offset).limit(limit):
-        id = atask["_id"]
-        job = scheduler.get_job(atask["job_id"])
-        if job is None:
-            raise HTTPException(status_code=404, detail=f"In task {id}, Job {atask['job_id']} not found")
-        task = TaskModelView(job=JobModel.parse_job(job), **atask)
-        tasks.append(task)
-    return tasks
+    views = []
+    async for doc in task_collection.find().skip(offset).limit(limit):
+        view = doc_to_taskmodel(doc, scheduler)
+        views.append(view)
+    return views
 
 
 @router.post("/search", response_model=List[TaskModelView])
@@ -129,28 +137,21 @@ async def search_tasks(
     if not search_condition:  # empty dict
         return []
 
-    tasks = []
-    async for atask in task_collection.find(search_condition).skip(offset).limit(limit):
-        id = atask["_id"]
-        job = scheduler.get_job(atask["job_id"])
-        if job is None:
-            raise HTTPException(status_code=404, detail=f"In task {id}, Job {atask['job_id']} not found")
-        task = TaskModelView(job=JobModel.parse_job(job), **atask)
-        tasks.append(task)
-    return tasks
+    views = []
+    async for doc in task_collection.find(search_condition).skip(offset).limit(limit):
+        view = doc_to_taskmodel(doc, scheduler)
+        views.append(view)
+    return views
 
 
 @router.get("/{id}", response_model=TaskModelView, responses=responses)
 async def read_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId) -> TaskModelView:
     """Get task with id"""
-    task = await task_collection.find_one({"_id": id})
-    if task is None:
+    doc = await task_collection.find_one({"_id": id})
+    if not doc:
         raise HTTPException(status_code=404, detail=f"Task {id} not found")
-    job = scheduler.get_job(task["job_id"])
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"In task {id}, Job {task['job_id']} not found")
-    task = TaskModelView(job=JobModel.parse_job(job), **task)
-    return task
+    view = doc_to_taskmodel(doc, scheduler)
+    return view
 
 
 @router.delete("/{id}", response_model=bool, responses=responses)
