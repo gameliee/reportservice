@@ -36,7 +36,7 @@ def read_excel_validate(excel_bytes: bytes) -> pd.DataFrame | None:
     try:
         df = pd.read_excel(file_like_excel, header=2, dtype=str, engine="openpyxl")
     except Exception as e:
-        raise ExcelInvalidException(f"cannot read excel file: {e}")
+        raise ExcelInvalidException(f"cannot read excel file: {e}") from e
 
     # only care about defined columns
     df.columns = [x.lower().strip() for x in df.columns]

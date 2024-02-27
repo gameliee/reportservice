@@ -2,7 +2,6 @@ import os
 import random
 import string
 import pytest
-import uuid
 from datetime import datetime
 
 
@@ -44,7 +43,7 @@ def dburi(request):
 
     def is_responsive(docker_ip, port):
         try:
-            MongoClient(host=docker_ip, port=port, serverSelectionTimeoutMS=5000).admin.command("ismaster"),
+            (MongoClient(host=docker_ip, port=port, serverSelectionTimeoutMS=5000).admin.command("ismaster"),)
         except Exception:
             return False
         return True

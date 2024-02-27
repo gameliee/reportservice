@@ -1,6 +1,4 @@
 import pytest
-from pytest_mock import MockerFixture
-from smtplib import SMTPRecipientsRefused
 from pyinstrument import Profiler
 from ..async_email_spammer import AsyncEmailSpammer
 
@@ -112,7 +110,7 @@ async def test_send_wrong_address(asyncspammer):
 @pytest.mark.asyncio
 async def test_spammer_performance(smtpconfig):
     with Profiler(async_mode=True) as profiler:
-        for i in range(10):
+        for _ in range(10):
             spammer = AsyncEmailSpammer(
                 username=smtpconfig["username"],
                 account=smtpconfig["account"],

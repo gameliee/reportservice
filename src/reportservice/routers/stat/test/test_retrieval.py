@@ -1,4 +1,3 @@
-from typing import List
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from ..retrieval import (
@@ -23,7 +22,8 @@ def fixture_faceiddb(dburi, testsettings, collectionconfig) -> AsyncIOMotorDatab
 
 @pytest.fixture
 def fixture_bodyfacename_collection(
-    fixture_faceiddb, appconfig: AppConfigModel  # noqa: F811
+    fixture_faceiddb,
+    appconfig: AppConfigModel,  # noqa: F811
 ) -> AsyncIOMotorCollection:
     return fixture_faceiddb[appconfig.faceiddb.face_collection]
 

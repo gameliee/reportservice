@@ -131,42 +131,60 @@ def test_update_content(testclient: TestClient, createtestcontent: str):
 
 
 def test_query_content(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/query", params={"query_date": renderdate})
     assert response.status_code == 200
 
 
 def test_query_content_now(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/query")
     assert response.status_code == 200
 
 
 def test_render_content(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render", params={"render_date": renderdate})
     assert response.status_code == 200
 
 
 def test_render_content_now(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render")
     assert response.status_code == 200
 
 
 def test_render_and_send(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render_and_send", params={"render_date": renderdate})
     assert response.status_code == 200
 
 
 def test_render_and_send_now(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render_and_send")
     assert response.status_code == 200
@@ -186,9 +204,8 @@ def test_upload_wrong_excel(testclient: TestClient, createtestcontent: str, inva
     ]
     headers = {"Accept": "application/json"}
 
-    with pytest.raises(Exception):
-        response = testclient.post(f"{PREFIX}/{createtestcontent}/upload", headers=headers, data=payload, files=files)
-        assert response.code == 400
+    response = testclient.post(f"{PREFIX}/{createtestcontent}/upload", headers=headers, data=payload, files=files)
+    assert response.status_code == 400
 
 
 def test_update_content2(testclient: TestClient, createtestcontent: str):
@@ -216,7 +233,10 @@ def test_upload_excel_again(testclient: TestClient, createtestcontent: str, exce
 
 
 def test_render_content2(
-    testclient: TestClient, createtestcontent: str, renderdate: datetime, generate_conf  # noqa: F811
+    testclient: TestClient,
+    createtestcontent: str,
+    renderdate: datetime,
+    generate_conf,  # noqa: F811
 ):
     response = testclient.get(f"{PREFIX}/{createtestcontent}/render", params={"render_date": renderdate})
     assert response.status_code == 200, response.json()

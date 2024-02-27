@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
-from base64 import b64encode, b64decode
-from typing import List, Optional, Annotated
-from fastapi import APIRouter, Request, HTTPException, status, UploadFile, File, Response
+from typing import List, Optional
+from fastapi import APIRouter
 from .models import LogModel, LogLevelEnum
 from ..common import DepLogCollection
 

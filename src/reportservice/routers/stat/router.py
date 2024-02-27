@@ -1,4 +1,3 @@
-from typing import Annotated, List
 from datetime import datetime
 from fastapi import APIRouter, Body
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger

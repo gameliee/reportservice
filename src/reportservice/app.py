@@ -43,8 +43,8 @@ async def init_database(app: FastAPI):
 async def init_dblogger(app: FastAPI):
     """init the database logger"""
     app.logger.info("Create log collection in the database...")
-    app.mongodb_client: AsyncIOMotorClient
-    db: AsyncIOMotorDatabase = app.mongodb_client[settings.DB_REPORT_NAME]
+    mongodb_client: AsyncIOMotorClient = app.mongodb_client
+    db: AsyncIOMotorDatabase = mongodb_client[settings.DB_REPORT_NAME]
     log_collection = await create_log_collection(settings.DB_COLLECTION_LOG, db)
 
     loop = asyncio.get_event_loop()
@@ -84,8 +84,8 @@ async def init_scheduler(app: FastAPI):
 
 async def close_scheduler(app: FastAPI):
     """close the scheduler"""
-    app.scheduler: AsyncIOScheduler
-    app.scheduler.shutdown()
+    scheduler: AsyncIOScheduler = app.scheduler
+    scheduler.shutdown()
 
 
 @asynccontextmanager

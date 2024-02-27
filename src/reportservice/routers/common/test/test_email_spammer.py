@@ -87,7 +87,7 @@ def test_send_wrong_address(spammerwithlove):
 
 def test_spammer_performance(smtpconfig):
     with Profiler() as profiler:
-        for i in range(10):
+        for _ in range(10):
             EmailSpammer(
                 username=smtpconfig["username"],
                 account=smtpconfig["account"],

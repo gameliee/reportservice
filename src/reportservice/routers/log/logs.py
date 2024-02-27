@@ -1,10 +1,8 @@
 import logging
 import asyncio
-import time
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from .models import LogModel, LogMeta, LogLevelEnum
-from ...settings import AppSettingsModel
 
 
 async def create_log_collection(collection_name: str, db: AsyncIOMotorDatabase):
@@ -46,9 +44,6 @@ class MongoHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         msg = self.format(record)
-
-        record.asctime
-        record.name
 
         print(LogLevelEnum(record.levelno))
         logmeta = LogMeta(level=LogLevelEnum(record.levelno))

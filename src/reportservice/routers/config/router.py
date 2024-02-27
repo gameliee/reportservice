@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -24,7 +23,9 @@ async def validate_config(config: AppConfigModel) -> bool:
             )
             await spammer.connect()
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Email settings did not work: {e} with settings {config.smtp}")
+        raise HTTPException(
+            status_code=422, detail=f"Email settings did not work: {e} with settings {config.smtp}"
+        ) from e
     return True
 
 

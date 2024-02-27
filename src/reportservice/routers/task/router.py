@@ -57,7 +57,7 @@ async def create_task(
         try:
             trigger = CronTriggerWithHoliday.from_crontab(_trigger.cron)
         except ValueError as e:
-            raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+            raise HTTPException(status_code=422, detail=f"crontab format error: {e}") from e
         trigger.start_date = _trigger.start_date
         trigger.end_date = _trigger.end_date
         trigger.set_exclude_dates(_trigger.exclude_dates)
@@ -220,7 +220,7 @@ async def update_task(
             try:
                 trigger = CronTriggerWithHoliday.from_crontab(_trigger.cron)
             except ValueError as e:
-                raise HTTPException(status_code=422, detail=f"crontab format error: {e}")
+                raise HTTPException(status_code=422, detail=f"crontab format error: {e}") from e
             trigger.start_date = _trigger.start_date
             trigger.end_date = _trigger.end_date
             trigger.set_exclude_dates(_trigger.exclude_dates)

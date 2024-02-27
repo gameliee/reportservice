@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import Field, EmailStr, ConfigDict, PrivateAttr
+from pydantic import Field, EmailStr, ConfigDict
 from pydantic_settings import BaseSettings
 
 FIXID = "dontchangeme"

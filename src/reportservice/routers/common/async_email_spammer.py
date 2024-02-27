@@ -19,7 +19,7 @@ class AsyncEmailSpammer:
         password: str,
         smtp_server="smtp.gmail.com",
         smtp_port=465,
-        logger: Logger = getLogger(),
+        logger: Logger | None = None,
         useSSL: bool = True,
         timeout: int = 5,
     ) -> None:
@@ -31,6 +31,8 @@ class AsyncEmailSpammer:
         :smtp_port
         """
         super().__init__()
+        if logger is None:
+            logger = getLogger()
         self.logger = logger
         self.username = username
         self.account = account

@@ -1,7 +1,8 @@
 import pytest
+import json
 from pydantic import BaseModel, ValidationError
-from ..models import validate_query, MongoQueryStr, QueryParamters
 from bson import json_util
+from ..models import validate_query, MongoQueryStr, QueryParamters
 
 
 def test_validate_query():
@@ -11,7 +12,8 @@ def test_validate_query():
 
     # Test the function with an invalid query
     invalid_query = '{"name": "John Doe",}'
-    with pytest.raises(Exception):
+
+    with pytest.raises(json.decoder.JSONDecodeError):
         validate_query(invalid_query)
 
 

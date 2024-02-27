@@ -2,19 +2,19 @@ import uuid
 from typing import Optional, List, Annotated
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator, NonNegativeInt, UUID4
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 from jinja2 import Environment, BaseLoader, Template
 from jinja2.exceptions import TemplateSyntaxError
 from ..stat import PersonInoutCollection
-from ..models import QueryParamters, ContentId, TaskId
+from ..models import QueryParamters, ContentId
 
 
 def validate_jinja(v: str) -> str:
     try:
         Environment(loader=BaseLoader).from_string(v)
     except TemplateSyntaxError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Jinja string error {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Jinja string error {e}") from e
     return v
 
 

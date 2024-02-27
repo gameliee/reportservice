@@ -18,7 +18,7 @@ class CronTriggerWithHoliday(CronTrigger):
         end_date=None,
         timezone=None,
         jitter=None,
-        exclude_dates=[],
+        exclude_dates=None,
     ):
         super().__init__(
             year=year,
@@ -34,7 +34,7 @@ class CronTriggerWithHoliday(CronTrigger):
             timezone=timezone,
             jitter=jitter,
         )
-        if exclude_dates is None:
+        if exclude_dates is None or not isinstance(exclude_dates, list):
             exclude_dates = []
         if len(exclude_dates) > 0:
             exclude_dates = [d.date() for d in exclude_dates]
@@ -82,10 +82,10 @@ class IntervalTriggerWithHoliday(IntervalTrigger):
         end_date=None,
         timezone=None,
         jitter=None,
-        exclude_dates=[],
+        exclude_dates=None,
     ):
         super().__init__(weeks, days, hours, minutes, seconds, start_date, end_date, timezone, jitter)
-        if exclude_dates is None:
+        if exclude_dates is None or not isinstance(exclude_dates, list):
             exclude_dates = []
         if len(exclude_dates) > 0:
             exclude_dates = [d.date() for d in exclude_dates]

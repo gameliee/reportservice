@@ -1,6 +1,6 @@
 from base64 import b64encode, b64decode
-from typing import List, Optional, Annotated
-from fastapi import APIRouter, Request, HTTPException, status, UploadFile, File, Response
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Response
 from datetime import datetime
 from pymongo.results import UpdateResult
 from fastapi.encoders import jsonable_encoder
@@ -74,7 +74,7 @@ async def upload_excel(collection: DepContentCollection, id: ContentId, excelfil
     try:
         df = read_excel_validate(excel)
     except ExcelInvalidException as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     new_staff_codes = df[ExcelColumn.ESTAFF].dropna().tolist()
 
