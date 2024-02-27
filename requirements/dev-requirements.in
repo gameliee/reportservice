@@ -1,8 +1,7 @@
 -c requirements.txt
 pip-tools
 pre-commit
-flake8
-black
+ruff
 line_profiler
 pytest
 pytest-cov
