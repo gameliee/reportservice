@@ -35,8 +35,9 @@ async def init_settings(app: FastAPI):
 
 async def init_database(app: FastAPI):
     """init the database connection"""
-    app.logger.info("Connecting to database...")
+    app.logger.info(f"Connecting to database at {settings.DB_URL}...")
     app.mongodb_client = AsyncIOMotorClient(settings.DB_URL, uuidRepresentation="standard")
+    app.logger.info("Connecting to database DONE!")
     # app.mongodb: AsyncIOMotorDatabase = app.mongodb_client[settings.DB_REPORT_NAME]
 
 
