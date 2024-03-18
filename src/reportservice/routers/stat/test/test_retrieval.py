@@ -1,3 +1,4 @@
+import json
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from ..retrieval import (
@@ -7,6 +8,7 @@ from ..retrieval import (
     get_has_sample_count,
     get_should_checkinout_count,
 )
+from ..queries import query_find_staff
 from ..models import PersonInout, PersonInoutCollection, QueryParamters
 from ...common import AppConfigModel
 from ...common.conftest import appconfig
@@ -55,6 +57,33 @@ async def test_get_inout_count(fixture_bodyfacename_collection, test_time):
         ret = await get_inout_count(fixture_bodyfacename_collection, begin=begin, end=1)
     with pytest.raises(ValueError):
         ret = await get_inout_count(fixture_bodyfacename_collection, begin="1", end=end)
+
+
+@pytest.mark.asyncio
+async def test_get_stage1(fixture_staff_collection, avai_staff):
+    query_params = QueryParamters()
+    assert query_params.is_empty()
+
+    query_params = QueryParamters(staffcodes=avai_staff)
+    assert not query_params.is_empty()
+    stage1 = query_find_staff(query_params)
+    cursor1 = fixture_staff_collection.aggregate(stage1)
+    count = 0
+    async for document in cursor1:
+        PersonInout.model_validate(document)
+        count += 1
+
+    assert count == len(avai_staff), json.dumps(stage1)
+
+    # testcase 2
+    custom_query = {"$and": [{"$eq": ["$unit", "BigHospital"]}, {"$eq": ["$department", "Mamachue"]}]}
+    custom_query_string = json.dumps(custom_query)
+    query_params = QueryParamters(custom_query=custom_query_string)
+    assert not query_params.is_empty()
+    stage2 = query_find_staff(query_params)
+    cursor2 = fixture_staff_collection.aggregate(stage2)
+    result = await cursor2.to_list(length=10000)
+    assert len(result) == 5, json.dumps(stage2)
 
 
 @pytest.mark.asyncio

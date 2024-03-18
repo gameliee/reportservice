@@ -15,7 +15,7 @@ def query_find_staff(query_params: QueryParamters):
                     {"title": {"$in": query_params.titles}},
                     {"email": {"$in": query_params.emails}},
                     {"cellphone": {"$in": query_params.cellphones}},
-                    {"$expr": {"$or": query_params.custom_queries}},
+                    {"$expr": query_params.custom_query},
                 ],
             }
         },

@@ -1,11 +1,12 @@
 """data models"""
+
 from enum import Enum
 from bson import json_util
 import json
 from typing import Annotated, Optional
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.functional_validators import AfterValidator
+from pydantic.functional_validators import BeforeValidator
 
 __all__ = [
     "QueryParamters",
@@ -26,12 +27,14 @@ CellphoneStr = Annotated[str, "cellphone number"]
 
 
 def validate_query(query_string):
+    if isinstance(query_string, dict):
+        return query_string
     # Attempt to parse the query string into a Python dictionary
-    json.loads(query_string, object_hook=json_util.object_hook)
+    query_string = json.loads(query_string, object_hook=json_util.object_hook)
     return query_string
 
 
-MongoQueryStr = Annotated[str, "mongo query string", AfterValidator(validate_query)]
+MongoQueryStr = Annotated[dict, "mongo query string", BeforeValidator(validate_query)]
 
 
 class QueryParamters(BaseModel):
@@ -44,7 +47,7 @@ class QueryParamters(BaseModel):
     titles: list[TitleStr] = []
     emails: list[EmailStr] = []
     cellphones: list[CellphoneStr] = []
-    custom_queries: list[MongoQueryStr] = []
+    custom_query: MongoQueryStr = {"$eq": [1, 0]}
 
     def is_empty(self):
         return (
@@ -55,9 +58,8 @@ class QueryParamters(BaseModel):
             + len(self.titles)
             + len(self.emails)
             + len(self.cellphones)
-            + len(self.custom_queries)
             == 0
-        )
+        ) and self.custom_query == {"$eq": [1, 0]}
 
 
 class QueryException(Exception):
