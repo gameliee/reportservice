@@ -4,8 +4,6 @@
 #
 #    pip-compile --no-emit-index-url --no-emit-trusted-host requirements/dev-requirements.in
 #
-attrs==23.2.0
-    # via pytest-docker
 build==1.0.3
     # via pip-tools
 cfgv==3.4.0
@@ -15,7 +13,9 @@ click==8.1.7
     #   -c requirements/requirements.txt
     #   pip-tools
 coverage[toml]==7.4.0
-    # via pytest-cov
+    # via
+    #   coverage
+    #   pytest-cov
 distlib==0.3.8
     # via virtualenv
 exceptiongroup==1.2.0
@@ -53,13 +53,10 @@ pytest==7.4.4
     #   -r requirements/dev-requirements.in
     #   pytest-asyncio
     #   pytest-cov
-    #   pytest-docker
     #   pytest-mock
 pytest-asyncio==0.23.3
     # via -r requirements/dev-requirements.in
 pytest-cov==4.1.0
-    # via -r requirements/dev-requirements.in
-pytest-docker==2.0.1
     # via -r requirements/dev-requirements.in
 pytest-mock==3.12.0
     # via -r requirements/dev-requirements.in
