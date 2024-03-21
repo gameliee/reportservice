@@ -1,5 +1,9 @@
 # Service for generate and send reports
 
+[![Build Status](http://172.23.111.200:8080/buildStatus/icon?job=reportservice2&build=last)](http://172.23.111.200:8080/job/reportservice2/)
+
+![Coverage](http://172.23.111.200:8080/buildStatus/icon?job=reportservice2&subject=Coverage&color=${colorInstructionCoverage}&status=${instructionCoverage})
+
 ## Run
 
 Run directly

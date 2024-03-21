@@ -3,6 +3,10 @@ version: '3.10'
 volumes:
   smtp-persistent:
 
+networks:
+  reportnetwork:
+    driver: bridge
+
 
 services:
   smtp:
@@ -12,10 +16,12 @@ services:
       - smtp-persistent:/app/smtp4dev/database
       # - ./smtpconfig/appsettings.json:/app/appsettings.json:ro
       # - ./certs:/app/certs                   # Mount SSL certificates
-    ports: 
-      - 8026:80 # web ui
-      - 1026:25 # SMTP
-      # - 1466:465 # SMTP over SSL -> not works
+    expose: 
+      - 80 # web ui
+      - 25 # SMTP
+      - 465 # SMTP over SSL -> not works
+    networks:
+      - reportnetwork
     environment:
       - ServerOptions__HostName=localhost
       - ServerOptions__TlsMode=None # 

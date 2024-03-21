@@ -1,0 +1,7 @@
+version: '3.10'
+
+services:
+  smtp:
+    ports: 
+      - 8026:80 # web ui
+      - 1026:25 # SMTP

@@ -1,0 +1,26 @@
+version: "3.10"
+
+networks:
+  reportnetwork:
+    driver: bridge
+
+services:
+  reportservice:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    security_opt:
+      - seccomp:unconfined # fix problem with docker version
+    environment:
+      - DB_ADMIN_URL_FOR_TEST=mongodb://foo:password@mongodb:27017/?directConnection=true
+      - DYNACONF_DB_URL=mongodb://reportuser:reportpassword@mongodb:27017/?directConnection=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      smtp:
+        condition: service_healthy
+    networks:
+      - reportnetwork
+    command: ["sh", "-c", "sleep 5 && pytest --cov --docker -x && coverage xml -o coverage.xml"]
+    # command: ["sh", "-c", "while true; do sleep 30; done;"]
+
