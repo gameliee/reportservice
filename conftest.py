@@ -18,9 +18,11 @@ def pytest_addoption(parser):
 def dburi(request):
     """ensure postgres db and central is up"""
     if request.config.getoption("--docker"):
-        return "mongodb://foo:password@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
+        return "mongodb://reportuser:reportpassword@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
     else:
-        return "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+        return (
+            "mongodb://reportuser:reportpassword@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+        )
 
 
 @pytest.fixture(scope="session")
@@ -43,7 +45,7 @@ def smtpconfig(request):
     if request.config.getoption("--docker"):
         return {
             "enable": "true",
-            "account": "testnv@example.com",
+            "account": "pytest@example.com",
             "password": "anypassword",
             "port": 25,
             "server": "smtp",
@@ -53,7 +55,7 @@ def smtpconfig(request):
     else:
         return {
             "enable": "true",
-            "account": "testnv@example.com",
+            "account": "pytest@example.com",
             "password": "anypassword",
             "port": 1026,
             "server": "localhost",
