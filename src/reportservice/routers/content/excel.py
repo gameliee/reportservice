@@ -146,6 +146,14 @@ def fill_personinout_to_excel(
     df = origin_df.combine_first(result_df)  # where magics happen
     df = df.reindex(columns=origin_columns)  # restore columns order
 
+    # format the datetime columns
+    df[ExcelColumn.EFIRST] = (
+        pd.to_datetime(df[ExcelColumn.EFIRST], utc=True).dt.tz_convert("Asia/Ho_Chi_Minh").dt.strftime("%H:%M:%S")
+    )
+    df[ExcelColumn.ELASTT] = (
+        pd.to_datetime(df[ExcelColumn.ELASTT], utc=True).dt.tz_convert("Asia/Ho_Chi_Minh").dt.strftime("%H:%M:%S")
+    )
+
     outbytes = fill_excel(excelbytes, df)
     return outbytes
 
@@ -173,6 +181,18 @@ def convert_personinout_to_excel(
             "sample_state": ExcelColumn.ESAMPL,
         },
         inplace=True,
+    )
+
+    # convert the datetime columns
+    result_df[ExcelColumn.EFIRST] = (
+        pd.to_datetime(result_df[ExcelColumn.EFIRST], utc=True)
+        .dt.tz_convert("Asia/Ho_Chi_Minh")
+        .dt.strftime("%H:%M:%S")
+    )
+    result_df[ExcelColumn.ELASTT] = (
+        pd.to_datetime(result_df[ExcelColumn.ELASTT], utc=True)
+        .dt.tz_convert("Asia/Ho_Chi_Minh")
+        .dt.strftime("%H:%M:%S")
     )
 
     # Sort by custom rules
@@ -205,9 +225,7 @@ def convert_personinout_to_excel(
     result_df.drop(columns=sort_by, inplace=True)
 
     # create index column
-    result_df.index.name = "STT"
-    result_df.index.name = "STT"
-    result_df.reset_index(inplace=True)
+    result_df["STT"] = range(1, len(result_df) + 1)
 
     # reorder the columns. First columns should be STT, staffcode, first, last, sample. And then the rest
     columns = result_df.columns.tolist()
@@ -217,6 +235,20 @@ def convert_personinout_to_excel(
     columns.remove(ExcelColumn.ELASTT)
     columns.remove(ExcelColumn.ESAMPL)
     columns = ["STT", ExcelColumn.ESTAFF, ExcelColumn.EFIRST, ExcelColumn.ELASTT, ExcelColumn.ESAMPL] + columns
+    result_df = result_df[columns]
+
+    # only keep some specific columns
+    columns = [
+        "STT",
+        ExcelColumn.ESTAFF,
+        ExcelColumn.EFIRST,
+        ExcelColumn.ELASTT,
+        "unit",
+        "department",
+        "title",
+        "haha",
+    ]
+    columns = [x for x in columns if x in result_df.columns]
     result_df = result_df[columns]
 
     # convert to excel
