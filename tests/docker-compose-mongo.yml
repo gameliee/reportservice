@@ -2,7 +2,7 @@ version: '3.10'
 
 services:
   mongodb:
-    image: mongo:6.0-focal
+    image: 172.23.111.200:5001/bitnami/mongodb:7.0
     volumes:
       - ./mongo:/docker-entrypoint-initdb.d:ro
     ports:
