@@ -163,6 +163,10 @@ async def get_person_record_by_id(
     count = await get_person_count_by_id(
         bodyfacename_collection, staff_code, begin, end, face_reg_score_threshold, has_mask, logger
     )
+
+    if limit == 0:
+        return PersonRecordCollection(count=count, values=[])
+
     pipeline = pipeline_get_record_by_id(begin, end, staff_code, face_reg_score_threshold, has_mask, offset, limit)
     logger.debug(f"running get_person_record_by_id pipeline: {pipeline}")
     cursor = bodyfacename_collection.aggregate(pipeline)

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import AwareDatetime
+from pydantic import AwareDatetime, NonNegativeInt
 from fastapi import APIRouter, Body
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
 from .retrieval import (
@@ -66,16 +66,18 @@ async def api_get_people_inout(
 async def api_get_person_record_by_id(
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
-    staff_id: StaffCodeStr | None = None,
+    staff_id: Optional[StaffCodeStr] = None,
     begin: Optional[AwareDatetime] = None,
     end: Optional[AwareDatetime] = None,
     face_reg_score_threshold: float = 0.63,
     has_mask: bool = False,
-    offset: int = 0,
-    limit: int = 10,
+    offset: NonNegativeInt = 0,
+    limit: NonNegativeInt = 10,
 ) -> PersonRecordCollection:
-    """Get the recognition record of a person by staff_code
-    if bot begin and end are not provided, the function will return the records for today (+07 timezone)
+    """Get the recognition record of a person by staff_code.
+    If both begin and end are not provided, the function will return the records for today (local timezone).
+    If only begin is provided, the function will return the records from begin to now.
+    If limit is larger than 100, it will be set to 100 to prevent the server from being overloaded.
     """
     if begin is None and end is None:
         begin = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).astimezone()
@@ -83,6 +85,9 @@ async def api_get_person_record_by_id(
 
     if end is None:
         end = datetime.now().astimezone()
+
+    if limit > 100:
+        limit = 100
 
     return await get_person_record_by_id(
         bodyfacename_collection=bodyfacename_collection,
