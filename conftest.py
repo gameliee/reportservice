@@ -23,6 +23,15 @@ def dburi(request):
         )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def admindburi(request):
+    """ensure postgres db and central is up"""
+    if request.config.getoption("--docker"):
+        return "mongodb://root:password@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
+    else:
+        return "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+
+
 @pytest.fixture(scope="session")
 def avai_staff():
     return ["219085", "206424", "267817"]
@@ -91,8 +100,8 @@ def renderdate():
 
 @pytest.fixture(scope="session")
 def test_time(renderdate: datetime):
-    day_begin = datetime.combine(date=renderdate.date(), time=datetime.min.time())
-    day_end = datetime.combine(date=renderdate.date(), time=datetime.max.time())
+    day_begin = datetime.combine(date=renderdate.date(), time=datetime.min.time(), tzinfo=renderdate.tzinfo)
+    day_end = datetime.combine(date=renderdate.date(), time=datetime.max.time(), tzinfo=renderdate.tzinfo)
     return day_begin, day_end
 
 
