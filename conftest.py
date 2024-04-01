@@ -1,6 +1,4 @@
 import os
-import random
-import string
 import pytest
 from datetime import datetime
 
@@ -81,9 +79,8 @@ def excelbytes(excelfile):
 
 @pytest.fixture(scope="session")
 def random_database_name(dburi):
-    """random database name for this application"""
-    name = "".join(random.choices(string.ascii_lowercase, k=10))
-    return name
+    """do not use random database name for this test, cause users have rules"""
+    return "TestReportService"
 
 
 @pytest.fixture(scope="session")
