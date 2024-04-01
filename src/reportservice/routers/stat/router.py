@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import AwareDatetime
 from fastapi import APIRouter, Body
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
@@ -65,15 +66,24 @@ async def api_get_people_inout(
 async def api_get_person_record_by_id(
     bodyfacename_collection: DepBodyFaceNameCollection,
     logger: DepLogger,
-    staff_id: StaffCodeStr,
-    begin: AwareDatetime = "2023-12-27T00:00:00.000+00:00",
-    end: AwareDatetime = "2023-12-27T23:59:59.999+00:00",
+    staff_id: StaffCodeStr | None = None,
+    begin: Optional[AwareDatetime] = None,
+    end: Optional[AwareDatetime] = None,
     face_reg_score_threshold: float = 0.63,
     has_mask: bool = False,
     offset: int = 0,
     limit: int = 10,
 ) -> PersonRecordCollection:
-    """Get the recognition record of a person by staff_code"""
+    """Get the recognition record of a person by staff_code
+    if bot begin and end are not provided, the function will return the records for today (+07 timezone)
+    """
+    if begin is None and end is None:
+        begin = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).astimezone()
+        end = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999).astimezone()
+
+    if end is None:
+        end = datetime.now().astimezone()
+
     return await get_person_record_by_id(
         bodyfacename_collection=bodyfacename_collection,
         staff_code=staff_id,

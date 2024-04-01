@@ -144,7 +144,7 @@ async def get_person_count_by_id(
 
 async def get_person_record_by_id(
     bodyfacename_collection: AsyncIOMotorCollection,
-    staff_code: str,
+    staff_code: str | None = None,
     begin: datetime = "2023-12-27T00:00:00.000+00:00",
     end: datetime = "2023-12-27T23:59:59.999+00:00",
     face_reg_score_threshold: float = 0.63,
