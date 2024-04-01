@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Optional, Dict
+from pydantic import AwareDatetime
 from .models import QueryParamters, StaffCodeStr, MongoSampleStateOfStaffModel, MongoStateOfStaffModel
 
 
@@ -239,4 +241,69 @@ def pipeline_count_has_sample():
             },
         },
     ]
+    return pipeline
+
+
+def condition_count_record_by_id(
+    begin: AwareDatetime,
+    end: AwareDatetime,
+    staff_id: Optional[StaffCodeStr] = None,
+    threshold: float = 0.63,
+    has_mark: bool = False,
+) -> Dict:
+    """return the count condition"""
+    condition = {
+        "image_time": {"$gte": begin, "$lte": end},
+        "face_reg_score": {"$gte": threshold},
+        "has_mask": has_mark,
+    }
+
+    if staff_id is not None:
+        condition["staff_id"] = staff_id
+
+    return condition
+
+
+def pipeline_get_record_by_id(
+    begin: AwareDatetime,
+    end: AwareDatetime,
+    staff_id: Optional[StaffCodeStr] = None,
+    threshold: float = 0.63,
+    has_mark: bool = False,
+    offset: int = 0,
+    limit: int = 10,
+):
+    pipeline = [
+        {
+            "$match": {
+                "image_time": {"$gte": begin, "$lte": end},
+                "face_reg_score": {"$gte": threshold},
+                "has_mask": has_mark,
+            },
+        },
+        {
+            "$sort": {
+                "image_time": -1,
+            },
+        },
+        {
+            "$skip": offset,
+        },
+        {
+            "$limit": limit,
+        },
+        {
+            "$project": {
+                "image_time": 1,
+                "staff_id": 1,
+                "camera_id": 1,
+                "face_reg_score": 1,
+                "img_link": 1,
+            },
+        },
+    ]
+
+    if staff_id is not None:
+        pipeline[0]["$match"]["staff_id"] = staff_id
+
     return pipeline

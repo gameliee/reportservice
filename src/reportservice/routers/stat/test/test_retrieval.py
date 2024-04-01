@@ -7,6 +7,8 @@ from ..retrieval import (
     get_people_inout,
     get_has_sample_count,
     get_should_checkinout_count,
+    get_person_count_by_id,
+    get_person_record_by_id,
 )
 from ..queries import query_find_staff
 from ..models import PersonInout, PersonInoutCollection, QueryParamters
@@ -126,3 +128,33 @@ async def test_get_sample_count(fixture_staff_collection):
 async def test_get_should_checkinout_count(fixture_staff_collection):
     count = await get_should_checkinout_count(fixture_staff_collection)
     assert count == 723 - 2, fixture_staff_collection.name
+
+
+@pytest.mark.asyncio
+async def test_get_person_count_by_id(fixture_bodyfacename_collection):
+    from datetime import datetime
+
+    begin = datetime.fromisoformat("1990-12-27T00:00:00.000+00:00")
+    end = datetime.fromisoformat("2990-12-27T00:00:00.000+00:00")
+    # testcase: count all
+    count = await get_person_count_by_id(fixture_bodyfacename_collection, None, begin, end, 0.1, False)
+    assert count == 100
+    # testcase: count one person
+    count = await get_person_count_by_id(fixture_bodyfacename_collection, "267817", begin, end, 0.1, False)
+    assert count == 48
+    # testcase: count no one
+    count = await get_person_count_by_id(fixture_bodyfacename_collection, "1", begin, end, 0.1, False)
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_person_record_by_id(fixture_bodyfacename_collection, test_time):
+    begin, end = test_time
+    records = await get_person_record_by_id(fixture_bodyfacename_collection, "267817", begin, end, 0.1, False)
+    assert records.count == 48
+    assert len(records.values) == 10
+    records = await get_person_record_by_id(
+        fixture_bodyfacename_collection, "267817", begin, end, 0.1, False, offset=45
+    )
+    assert records.count == 48
+    assert len(records.values) == 3

@@ -1,4 +1,5 @@
 from datetime import datetime
+from pydantic import AwareDatetime
 from fastapi import APIRouter, Body
 from ..common import DepStaffCollection, DepBodyFaceNameCollection, DepLogger
 from .retrieval import (
@@ -7,8 +8,9 @@ from .retrieval import (
     get_people_inout,
     get_has_sample_count,
     get_should_checkinout_count,
+    get_person_record_by_id,
 )
-from .models import QueryParamters, PersonInoutCollection
+from .models import QueryParamters, PersonInoutCollection, PersonRecordCollection, StaffCodeStr
 
 
 router = APIRouter()
@@ -57,3 +59,29 @@ async def api_get_people_inout(
     )
 
     return peopleinout
+
+
+@router.get("/person_record")
+async def api_get_person_record_by_id(
+    bodyfacename_collection: DepBodyFaceNameCollection,
+    logger: DepLogger,
+    staff_id: StaffCodeStr,
+    begin: AwareDatetime = "2023-12-27T00:00:00.000+00:00",
+    end: AwareDatetime = "2023-12-27T23:59:59.999+00:00",
+    face_reg_score_threshold: float = 0.63,
+    has_mask: bool = False,
+    offset: int = 0,
+    limit: int = 10,
+) -> PersonRecordCollection:
+    """Get the recognition record of a person by staff_code"""
+    return await get_person_record_by_id(
+        bodyfacename_collection=bodyfacename_collection,
+        staff_code=staff_id,
+        begin=begin,
+        end=end,
+        face_reg_score_threshold=face_reg_score_threshold,
+        has_mask=has_mask,
+        offset=offset,
+        limit=limit,
+        logger=logger,
+    )

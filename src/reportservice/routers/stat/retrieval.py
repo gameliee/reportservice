@@ -2,13 +2,15 @@ from typing import List, Any
 from datetime import datetime
 import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .models import QueryParamters, PersonInoutCollection, PersonInout
+from .models import QueryParamters, PersonInoutCollection, PersonInout, PersonRecord, PersonRecordCollection
 from .queries import (
     pipeline_count,
     query_find_staff,
     query_find_staff_inout,
     pipeline_count_shoulddiemdanh,
     pipeline_count_has_sample,
+    pipeline_get_record_by_id,
+    condition_count_record_by_id,
 )
 
 
@@ -116,3 +118,57 @@ async def get_people_inout(
     logger.debug(f"running in-out pipeline stage2 result: {_stage2_result}")
 
     return PersonInoutCollection(count=len(final_result), values=final_result)
+
+
+async def get_person_count_by_id(
+    bodyfacename_collection: AsyncIOMotorCollection,
+    staff_code: str | None = None,
+    begin: datetime = "2023-12-27T00:00:00.000+00:00",
+    end: datetime = "2023-12-27T23:59:59.999+00:00",
+    face_reg_score_threshold: float = 0.63,
+    has_mask: bool = False,
+    logger: logging.Logger | None = None,
+) -> int:
+    if logger is None:
+        logger = logging.getLogger()
+    if not isinstance(begin, datetime):
+        begin = datetime.fromisoformat(begin)
+    if not isinstance(end, datetime):
+        end = datetime.fromisoformat(end)
+
+    condition = condition_count_record_by_id(begin, end, staff_code, face_reg_score_threshold, has_mask)
+
+    count = await bodyfacename_collection.count_documents(condition)
+    return count
+
+
+async def get_person_record_by_id(
+    bodyfacename_collection: AsyncIOMotorCollection,
+    staff_code: str,
+    begin: datetime = "2023-12-27T00:00:00.000+00:00",
+    end: datetime = "2023-12-27T23:59:59.999+00:00",
+    face_reg_score_threshold: float = 0.63,
+    has_mask: bool = False,
+    offset: int = 0,
+    limit: int = 10,
+    logger: logging.Logger | None = None,
+) -> PersonRecordCollection:
+    if logger is None:
+        logger = logging.getLogger()
+    if not isinstance(begin, datetime):
+        begin = datetime.fromisoformat(begin)
+    if not isinstance(end, datetime):
+        end = datetime.fromisoformat(end)
+
+    count = await get_person_count_by_id(
+        bodyfacename_collection, staff_code, begin, end, face_reg_score_threshold, has_mask, logger
+    )
+    pipeline = pipeline_get_record_by_id(begin, end, staff_code, face_reg_score_threshold, has_mask, offset, limit)
+    logger.debug(f"running get_person_record_by_id pipeline: {pipeline}")
+    cursor = bodyfacename_collection.aggregate(pipeline)
+    final_result: List[PersonRecord] = []
+    async for document in cursor:
+        record = PersonRecord.model_validate(document)
+        final_result.append(record)
+
+    return PersonRecordCollection(count=count, values=final_result)

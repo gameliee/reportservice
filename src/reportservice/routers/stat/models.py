@@ -4,8 +4,8 @@ from enum import Enum
 from bson import json_util
 import json
 from typing import Annotated, Optional
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime, timezone
+from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl, model_validator
 from pydantic.functional_validators import BeforeValidator
 
 __all__ = [
@@ -24,6 +24,7 @@ DepartmentStr = Annotated[str, "department name"]
 TitleStr = Annotated[str, "title name"]
 EmailStr = Annotated[str, "email address"]
 CellphoneStr = Annotated[str, "cellphone number"]
+CameraIdStr = Annotated[str, "camera id"]
 
 
 def validate_query(query_string):
@@ -109,3 +110,23 @@ class PersonInout(MongoStaffModel, MongoInOutModel):
 class PersonInoutCollection(BaseModel):
     count: int
     values: list[PersonInout]
+
+
+class PersonRecord(BaseModel):
+    staff_id: StaffCodeStr
+    full_name: Optional[FullNameStr] = None
+    camera_id: CameraIdStr
+    image_time: datetime
+    face_reg_score: float
+    img_link: Optional[AnyHttpUrl] = None
+
+    @model_validator(mode="after")
+    def convert_image_time(self) -> "PersonRecord":
+        if self.image_time.tzinfo is None:
+            self.image_time = self.image_time.replace(tzinfo=timezone.utc)
+        return self
+
+
+class PersonRecordCollection(BaseModel):
+    count: int
+    values: list[PersonRecord]
