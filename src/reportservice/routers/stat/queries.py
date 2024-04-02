@@ -307,3 +307,47 @@ def pipeline_get_record_by_id(
         pipeline[0]["$match"]["staff_id"] = staff_id
 
     return pipeline
+
+
+def pipeline_stat_by_camera(
+    begin: AwareDatetime,
+    end: AwareDatetime,
+    staff_id: Optional[StaffCodeStr] = None,
+    threshold: float = 0.63,
+    has_mark: bool = False,
+    timezone: str = "Asia/Ho_Chi_Minh",
+):
+    """pipeline for counting the number of records by camera_id and by date"""
+    pipeline = [
+        {
+            "$match": {
+                "image_time": {"$gte": begin, "$lte": end},
+                "face_reg_score": {"$gte": threshold},
+                "has_mask": has_mark,
+            },
+        },
+        {
+            "$group": {
+                "_id": {
+                    "camera_id": "$camera_id",
+                    "date": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$image_time",
+                            "timezone": timezone,
+                        },
+                    },
+                },
+                "count": {
+                    "$sum": 1,
+                },
+            },
+        },
+        {
+            "$project": {"_id": 0, "date": "$_id.date", "camera_id": "$_id.camera_id", "count": 1},
+        },
+    ]
+    if staff_id is not None:
+        pipeline[0]["$match"]["staff_id"] = staff_id
+
+    return pipeline

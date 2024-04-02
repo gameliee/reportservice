@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import AwareDatetime, NonNegativeInt
 from fastapi import APIRouter, Body
@@ -10,8 +10,9 @@ from .retrieval import (
     get_has_sample_count,
     get_should_checkinout_count,
     get_person_record_by_id,
+    get_record_count_by_date_cam,
 )
-from .models import QueryParamters, PersonInoutCollection, PersonRecordCollection, StaffCodeStr
+from .models import QueryParamters, PersonInoutCollection, PersonRecordCollection, StaffCodeStr, ByDateCamCollection
 
 
 router = APIRouter()
@@ -99,4 +100,30 @@ async def api_get_person_record_by_id(
         offset=offset,
         limit=limit,
         logger=logger,
+    )
+
+
+@router.get("/by_date_cam_stats")
+async def api_get_record_count_by_date_cam(
+    bodyfacename_collection: DepBodyFaceNameCollection,
+    logger: DepLogger,
+    staff_id: Optional[StaffCodeStr] = None,
+    begin: Optional[AwareDatetime] = None,
+    end: Optional[AwareDatetime] = None,
+    face_reg_score_threshold: float = 0.63,
+    has_mask: bool = False,
+) -> ByDateCamCollection:
+    """Get the recognition record of a person by staff_code.
+    If both begin and end are not provided, the function will return the records for the last 7 days (local timezone).
+    If only begin is provided, the function will return the records from begin to now.
+    """
+    if begin is None and end is None:
+        begin = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).astimezone() - timedelta(days=7)
+        end = datetime.now().astimezone()
+
+    if end is None:
+        end = datetime.now().astimezone()
+
+    return await get_record_count_by_date_cam(
+        bodyfacename_collection, staff_id, begin, end, face_reg_score_threshold, has_mask, logger
     )

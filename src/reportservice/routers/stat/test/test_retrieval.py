@@ -9,6 +9,7 @@ from ..retrieval import (
     get_should_checkinout_count,
     get_person_count_by_id,
     get_person_record_by_id,
+    get_record_count_by_date_cam,
 )
 from ..queries import query_find_staff
 from ..models import PersonInout, PersonInoutCollection, QueryParamters
@@ -164,3 +165,14 @@ async def test_get_person_record_by_id(fixture_bodyfacename_collection, test_tim
     )
     assert records.count == 48
     assert len(records.values) == 3
+
+
+@pytest.mark.asyncio
+async def test_get_record_count_by_date_cam(fixture_bodyfacename_collection, test_time):
+    begin, end = test_time
+    records = await get_record_count_by_date_cam(fixture_bodyfacename_collection, None, begin, end, 0.1, False)
+    assert records.count == 5
+    assert 0, records
+
+    records = await get_record_count_by_date_cam(fixture_bodyfacename_collection, "267817", begin, end, 0.1, False)
+    assert records.count == 1

@@ -4,7 +4,7 @@ from enum import Enum
 from bson import json_util
 import json
 from typing import Annotated, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl, model_validator
 from pydantic.functional_validators import BeforeValidator
 
@@ -130,3 +130,16 @@ class PersonRecord(BaseModel):
 class PersonRecordCollection(BaseModel):
     count: int
     values: list[PersonRecord]
+
+
+class ByDateCam(BaseModel):
+    """The store model for the count of person in a camera in a day."""
+
+    date: date
+    camera_id: CameraIdStr
+    count: int
+
+
+class ByDateCamCollection(BaseModel):
+    count: int
+    values: list[ByDateCam]

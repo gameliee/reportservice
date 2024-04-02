@@ -2,7 +2,15 @@ from typing import List, Any
 from datetime import datetime
 import logging
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .models import QueryParamters, PersonInoutCollection, PersonInout, PersonRecord, PersonRecordCollection
+from .models import (
+    QueryParamters,
+    PersonInoutCollection,
+    PersonInout,
+    PersonRecord,
+    PersonRecordCollection,
+    ByDateCam,
+    ByDateCamCollection,
+)
 from .queries import (
     pipeline_count,
     query_find_staff,
@@ -11,6 +19,7 @@ from .queries import (
     pipeline_count_has_sample,
     pipeline_get_record_by_id,
     condition_count_record_by_id,
+    pipeline_stat_by_camera,
 )
 
 
@@ -176,3 +185,30 @@ async def get_person_record_by_id(
         final_result.append(record)
 
     return PersonRecordCollection(count=count, values=final_result)
+
+
+async def get_record_count_by_date_cam(
+    bodyfacename_collection: AsyncIOMotorCollection,
+    staff_code: str | None = None,
+    begin: datetime = "2023-12-27T00:00:00.000+00:00",
+    end: datetime = "2023-12-27T23:59:59.999+00:00",
+    face_reg_score_threshold: float = 0.63,
+    has_mask: bool = False,
+    logger: logging.Logger | None = None,
+) -> ByDateCamCollection:
+    if logger is None:
+        logger = logging.getLogger()
+    if not isinstance(begin, datetime):
+        begin = datetime.fromisoformat(begin)
+    if not isinstance(end, datetime):
+        end = datetime.fromisoformat(end)
+
+    pipeline = pipeline_stat_by_camera(begin, end, staff_code, face_reg_score_threshold, has_mask)
+    logger.debug(f"running get_record_count_by_date_cam pipeline: {pipeline}")
+    cursor = bodyfacename_collection.aggregate(pipeline)
+    final_result: List[ByDateCam] = []
+    async for document in cursor:
+        record = ByDateCam.model_validate(document)
+        final_result.append(record)
+
+    return ByDateCamCollection(count=len(final_result), values=final_result)

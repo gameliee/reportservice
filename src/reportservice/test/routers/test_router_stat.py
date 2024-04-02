@@ -56,3 +56,10 @@ def test_api_get_person_record_by_id(testclient: TestClient, _payload, generate_
     response = testclient.get(f"{PREFIX}/person_record", params=params)
     assert response.status_code == 200, response.json()
     assert 48 == response.json()["count"]
+
+
+def test_api_get_record_count_by_date_cam(testclient: TestClient, _payload, generate_conf):  # noqa: F811
+    params = {"face_reg_score_threshold": 0.1, **_payload}
+    response = testclient.get(f"{PREFIX}/by_date_cam_stats", params=params)
+    assert response.status_code == 200, response.json()
+    assert 5 == response.json()["count"], response.json()
