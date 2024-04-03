@@ -172,7 +172,6 @@ async def test_get_record_count_by_date_cam(fixture_bodyfacename_collection, tes
     begin, end = test_time
     records = await get_record_count_by_date_cam(fixture_bodyfacename_collection, None, begin, end, 0.1, False)
     assert records.count == 5
-    assert 0, records
 
     records = await get_record_count_by_date_cam(fixture_bodyfacename_collection, "267817", begin, end, 0.1, False)
     assert records.count == 1
