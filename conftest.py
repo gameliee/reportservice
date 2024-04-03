@@ -12,24 +12,17 @@ def pytest_addoption(parser):
     parser.addoption("--docker", action="store_true", help="use the network inside docker-compose")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def dburi(request):
-    """ensure postgres db and central is up"""
-    if request.config.getoption("--docker"):
-        return "mongodb://reportuser:reportpassword@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
-    else:
-        return (
-            "mongodb://reportuser:reportpassword@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
-        )
-
-
-@pytest.fixture(scope="session", autouse=True)
-def admindburi(request):
-    """ensure postgres db and central is up"""
-    if request.config.getoption("--docker"):
-        return "mongodb://root:password@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
-    else:
-        return "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+@pytest.fixture(scope="session")
+def admindburi():
+    default_admin_uri = "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+    admindburi = os.environ.get("DB_ADMIN_URL_FOR_TEST", default_admin_uri)
+    assert admindburi is not None
+    return admindburi
+    # """ensure postgres db and central is up"""
+    # if request.config.getoption("--docker"):
+    #     return "mongodb://root:password@mongodb:27017/general?authSource=admin&retryWrites=true&w=majority"
+    # else:
+    #     return "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
 
 
 @pytest.fixture(scope="session")
@@ -52,11 +45,11 @@ def smtpconfig(request):
     if request.config.getoption("--docker"):
         return {
             "enable": "true",
-            "account": "pytest@example.com",
+            "account": "pytest@insidedocker.com",
             "password": "anypassword",
             "port": 25,
             "server": "smtp",
-            "username": "testuser",
+            "username": "testuser_inside_docker",
             "useSSL": False,
         }
     else:
@@ -87,7 +80,7 @@ def excelbytes(excelfile):
 
 
 @pytest.fixture(scope="session")
-def random_database_name(dburi):
+def random_database_name():
     """do not use random database name for this test, cause users have rules"""
     return "TestReportService"
 

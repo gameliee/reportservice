@@ -8,7 +8,7 @@ from ..logs import MongoHandler, create_log_collection
 from ....settings import AppSettingsModel
 
 
-@pytest.mark.usefixtures("dburi", "testsettings")
+@pytest.mark.usefixtures("testsettings")
 @pytest.mark.asyncio(scope="class")
 class TestLogger:
     loop: asyncio.AbstractEventLoop
@@ -20,10 +20,9 @@ class TestLogger:
         assert asyncio.get_running_loop() is TestLogger.loop
 
     @pytest_asyncio.fixture(scope="class")
-    async def log_collection(self, dburi: str, testsettings: AppSettingsModel):
+    async def log_collection(self, testsettings: AppSettingsModel):
         assert isinstance(testsettings, AppSettingsModel)
-        assert isinstance(dburi, str)
-        mongo = AsyncIOMotorClient(dburi, uuidRepresentation="standard")
+        mongo = AsyncIOMotorClient(testsettings.DB_URL, uuidRepresentation="standard")
         database = mongo[testsettings.DB_REPORT_NAME]
         log_collection = await create_log_collection(testsettings.DB_COLLECTION_LOG, database)
         assert isinstance(log_collection, AsyncIOMotorCollection)

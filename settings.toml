@@ -5,14 +5,10 @@ HOST = "0.0.0.0"
 PORT = 3002
 DEBUG_MODE = true
 
-DB_URL = "mongodb://foo:password@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
+DB_URL = "mongodb://reportuser:reportpassword@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
 DB_REPORT_NAME = "ReportService"
 DB_COLLECTION_CONFIG = "ReportConfigurations"
 DB_COLLECTION_CONTENT = "ReportContent"
 DB_COLLECTION_TASK = "ReportTask"
 DB_COLLECTION_SCHEDULER = "ReportScheduler"
 DB_COLLECTION_LOG = "ReportLog"
-
-[production]
-DB_URL = "mongodb://dat:password@mongo:27017/general?authSource=admin&retryWrites=true&w=majority"
-DEBUG_MODE = false

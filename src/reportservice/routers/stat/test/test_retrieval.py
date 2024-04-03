@@ -18,8 +18,8 @@ from ...common.conftest import appconfig
 
 
 @pytest.fixture
-def fixture_faceiddb(dburi, testsettings, collectionconfig) -> AsyncIOMotorDatabase:
-    mongodb_client = AsyncIOMotorClient(dburi, uuidRepresentation="standard")
+def fixture_faceiddb(testsettings, collectionconfig) -> AsyncIOMotorDatabase:
+    mongodb_client = AsyncIOMotorClient(testsettings.DB_URL, uuidRepresentation="standard")
     faceid_database_name = collectionconfig["database"]
     mongodb: AsyncIOMotorDatabase = mongodb_client[faceid_database_name]
     return mongodb

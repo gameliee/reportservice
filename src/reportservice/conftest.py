@@ -15,8 +15,7 @@ def monkeypatch_session():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def patch_settings(monkeypatch_session, temp_log_file, dburi, random_database_name):
-    monkeypatch_session.setattr(settings, "DB_URL", dburi)
+def patch_settings(monkeypatch_session, temp_log_file, random_database_name):
     monkeypatch_session.setattr(settings, "LOG_FILE", temp_log_file)
     monkeypatch_session.setattr(settings, "DB_REPORT_NAME", random_database_name)
 
@@ -29,11 +28,11 @@ def delete_random_database(patch_settings, admindburi, random_database_name):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def testsettings(monkeypatch_session, dburi):
+def testsettings(monkeypatch_session):
     return settings
 
 
 @pytest.fixture(scope="session")
-def testclient(dburi):
+def testclient():
     with TestClient(app) as client:
         yield client
