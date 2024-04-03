@@ -25,4 +25,9 @@ services:
       # - ServerOptions__TlsMode=ImplicitTls
       # - ServerOptions__TlsCertificate=/app/certs/smtp4dev.crt
       # - ServerOptions__TlsCertificatePrivateKey=/app/certs/smtp4dev.key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
