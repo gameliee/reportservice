@@ -4,20 +4,6 @@ from ..async_email_spammer import AsyncEmailSpammer
 
 
 @pytest.mark.asyncio
-async def test_just_send_async():
-    import aiosmtplib
-    from email.message import EmailMessage
-
-    message = EmailMessage()
-    message["From"] = "pytest@localhost"
-    message["To"] = "somebody@example.com"
-    message["Subject"] = "Hello World!"
-    message.set_content("Sent via aiosmtplib")
-
-    await aiosmtplib.send(message, hostname="172.23.111.200", port=1026, timeout=3)
-
-
-@pytest.mark.asyncio
 async def test_create_spammer(smtpconfig):
     import logging
 
