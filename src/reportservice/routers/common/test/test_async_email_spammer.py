@@ -9,7 +9,7 @@ async def test_just_send_async():
     from email.message import EmailMessage
 
     message = EmailMessage()
-    message["From"] = "root@localhost"
+    message["From"] = "pytest@localhost"
     message["To"] = "somebody@example.com"
     message["Subject"] = "Hello World!"
     message.set_content("Sent via aiosmtplib")

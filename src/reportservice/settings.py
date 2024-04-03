@@ -1,6 +1,8 @@
 """load config"""
-from dynaconf import Dynaconf
+
+from pydantic import MongoDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dynaconf import Dynaconf
 
 dynasettings = Dynaconf(
     settings_file=["settings.toml", ".secret.toml"],
@@ -28,6 +30,11 @@ class DatabaseSettingsModel(BaseSettings):
     DB_COLLECTION_TASK: str
     DB_COLLECTION_SCHEDULER: str
     DB_COLLECTION_LOG: str
+
+    @field_validator("DB_URL")
+    @classmethod
+    def validate_mongo_uri(cls, v: str) -> str:
+        return str(MongoDsn(v))
 
 
 class AppSettingsModel(CommonSettingsModel, ServerSettingsModel, DatabaseSettingsModel):
