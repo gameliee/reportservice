@@ -14,8 +14,6 @@ services:
     # volumes:
       # - ./.secret.toml:/usr/src/app/.secret.toml:ro # For secrets if needed
     restart: unless-stopped
-    env_file:
-      - ../.env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/connection-status"]
       start_period: 30s
