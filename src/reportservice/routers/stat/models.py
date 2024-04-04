@@ -25,6 +25,7 @@ TitleStr = Annotated[str, "title name"]
 EmailStr = Annotated[str, "email address"]
 CellphoneStr = Annotated[str, "cellphone number"]
 CameraIdStr = Annotated[str, "camera id"]
+SubIdStr = Annotated[str, "sub id"]
 
 
 def validate_query(query_string):
@@ -119,6 +120,7 @@ class PersonRecord(BaseModel):
     image_time: datetime
     face_reg_score: float
     img_link: Optional[AnyHttpUrl] = None
+    sub_id: Optional[SubIdStr] = None
 
     @model_validator(mode="after")
     def convert_image_time(self) -> "PersonRecord":

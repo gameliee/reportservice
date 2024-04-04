@@ -299,6 +299,7 @@ def pipeline_get_record_by_id(
                 "camera_id": 1,
                 "face_reg_score": 1,
                 "img_link": 1,
+                "sub_id": 1,
             },
         },
     ]
