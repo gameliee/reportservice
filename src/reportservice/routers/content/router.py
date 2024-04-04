@@ -26,10 +26,11 @@ responses = {404: {"description": "No content found"}}
 @router.get("/", response_model=List[ContentModel])
 async def list_contents(collection: DepContentCollection, offset: int = 0, limit: int = 0):
     """Get all contents"""
-    triggers = []
+    contents: List[ContentModel] = []
     for doc in await collection.find().skip(offset).limit(limit).to_list(100):
-        triggers.append(doc)
-    return triggers
+        this_content = ContentModel.model_validate(doc)
+        contents.append(this_content.model_dump())
+    return contents
 
 
 @router.get("/{id}", response_model=ContentModel, responses=responses)

@@ -86,7 +86,7 @@ class ContentModelCreate(ContentModelBase):
 class ContentModelUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    to: Optional[List[EmailStr]] = None
+    to: Optional[List[EmailStr]] = Field(None, min_length=1)
     cc: Optional[List[EmailStr]] = None
     bcc: Optional[List[EmailStr]] = None
     subject_template: Optional[JinjaStr] = None
