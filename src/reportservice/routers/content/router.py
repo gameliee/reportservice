@@ -115,9 +115,16 @@ async def download_excel(collection: DepContentCollection, id: ContentId):
 
 @router.delete(
     "/{id}",
-    responses={**responses, 400: {"description": "There are tasks using this content, abort"}},
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        **responses,
+        400: {"description": "There are tasks using this content, abort"},
+        204: {"description": "Content has been deleted successfully. No further information"},
+    },
 )
-async def delete_content(content_collection: DepContentCollection, task_collection: DepTaskCollection, id: ContentId):
+async def delete_content(
+    content_collection: DepContentCollection, task_collection: DepTaskCollection, id: ContentId
+) -> None:
     """delete a content which linked with no task. If there are tasks using this content, abort and raise error"""
     task = await task_collection.find_one({"content_id": id})
     if task is not None:
@@ -129,7 +136,7 @@ async def delete_content(content_collection: DepContentCollection, task_collecti
     delete_result = await content_collection.delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
-        return JSONResponse(status_code=status.HTTP_200_OK, content=f"Content {id} has been deleted")
+        return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=f"Content {id} has been deleted")
 
     raise HTTPException(status_code=404, detail=f"Content {id} not found")
 

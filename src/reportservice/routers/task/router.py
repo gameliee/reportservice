@@ -154,8 +154,12 @@ async def read_task(task_collection: DepTaskCollection, scheduler: DepSCheduler,
     return view
 
 
-@router.delete("/{id}", response_model=bool, responses=responses)
-async def delete_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId):
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**responses, 204: {"description": "Content has been deleted successfully. No further information"}},
+)
+async def delete_task(task_collection: DepTaskCollection, scheduler: DepSCheduler, id: TaskId) -> None:
     task = await task_collection.find_one({"_id": id})
     if not task:
         raise HTTPException(status_code=404, detail=f"Task {id} not found")
@@ -166,7 +170,7 @@ async def delete_task(task_collection: DepTaskCollection, scheduler: DepSChedule
 
     delete_result = await task_collection.delete_one({"_id": id})
     if delete_result.deleted_count == 1:
-        return True
+        return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=f"Task {id} has been deleted")
     raise HTTPException(status_code=404, detail=f"Task {id} not found")
 
 

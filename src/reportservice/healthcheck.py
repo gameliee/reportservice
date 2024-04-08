@@ -59,6 +59,6 @@ async def logic_healthcheck(app: FastAPI) -> HealthCheck:
 
     checks = CheckInfo(status=status, data=CheckData(system_info=sysinfo, detail=detail))
 
-    healthcheck = HealthCheck(name="reportservice", version="0.3.0", checks=checks)
+    healthcheck = HealthCheck(name="reportservice", version="0.4.0", checks=checks)
 
     return healthcheck

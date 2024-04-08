@@ -49,7 +49,7 @@ def test_create_task(testclient, fakecontentid: str):
     assert response.status_code == 201, response.json()
     testid = response.json()["_id"]
     response = testclient.delete(f"{PREFIX}/{testid}")
-    assert response.status_code == 200, response.json()
+    assert response.status_code == 204, response.json()
 
 
 @pytest.fixture(scope="module")
