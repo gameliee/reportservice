@@ -5,6 +5,13 @@ from fastapi.testclient import TestClient
 PREFIX = "/config"
 
 
+def test_update_conf6(testclient: TestClient):
+    """update nothing to nothing"""
+    payload = json.dumps({})
+    response = testclient.put(f"{PREFIX}/", data=payload)
+    assert response.status_code == 404
+
+
 @pytest.fixture(scope="session")
 def true_config(collectionconfig, smtpconfig):
     return {"faceiddb": collectionconfig, "smtp": smtpconfig}
@@ -27,11 +34,6 @@ def test_get_conf1(testclient: TestClient):
 def test_update_conf1(testclient: TestClient):
     payload = json.dumps({"smtp": {"username": "noway"}})
     response = testclient.put(f"{PREFIX}/", data=payload)
-    assert response.status_code == 404
-
-
-def test_delete_conf(testclient: TestClient):
-    response = testclient.delete(f"{PREFIX}/")
     assert response.status_code == 404
 
 
@@ -86,11 +88,4 @@ def test_update_conf5(testclient: TestClient, generate_conf):
 
 def test_delete_conf2(testclient: TestClient, generate_conf):
     response = testclient.delete(f"{PREFIX}/")
-    assert response.status_code == 200
-
-
-def test_update_conf6(testclient: TestClient):
-    """update nothing to nothing"""
-    payload = json.dumps({})
-    response = testclient.put(f"{PREFIX}/", data=payload)
-    assert response.status_code == 404
+    assert response.status_code == 405  # method not allowed

@@ -79,20 +79,3 @@ async def update_config(
         return existing_settings
 
     raise HTTPException(status_code=404, detail="No config found")
-
-
-@router.delete("/", response_model=bool, responses=responses)
-async def delete_config(collection: DepConfigCollection):
-    config = await collection.find_one()
-    if not config:
-        raise HTTPException(status_code=404, detail="No config found")
-
-    id = config.pop("_id")
-    config = AppConfigModel.model_validate(config)
-
-    delete_result = await collection.delete_one({"_id": id})
-
-    if delete_result.deleted_count == 1:
-        return True
-
-    raise HTTPException(status_code=404, detail="Nothing to delete")
