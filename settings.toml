@@ -3,7 +3,8 @@ LOG_FILE = "log/debug.log"
 APP_NAME = "reportservice"
 HOST = "0.0.0.0"
 PORT = 3002
-DEBUG_MODE = true
+DEBUG_MODE = false # watch for changes and auto reload the server
+
 
 DB_URL = "mongodb://reportuser:reportpassword@localhost:27017/general?authSource=admin&retryWrites=true&w=majority"
 DB_REPORT_NAME = "ReportService"

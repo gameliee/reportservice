@@ -13,7 +13,8 @@ dynasettings = Dynaconf(
 class CommonSettingsModel(BaseSettings):
     LOG_FILE: str = "log/debug.log"
     APP_NAME: str = "FARM"
-    DEBUG_MODE: bool = False
+    DEBUG_MODE: bool = False  # watch for changes and auto reload the server
+    PROFILING_ENABLED: bool = False  # Enable pyinstrument profiling
     WORKERS: int = 1
 
 
