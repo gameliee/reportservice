@@ -39,7 +39,9 @@ et-xmlfile==1.1.0
 exceptiongroup==1.2.0
     # via anyio
 fastapi[all]==0.100.0
-    # via -r requirements/requirements.in
+    # via
+    #   -r requirements/requirements.in
+    #   fastapi
 h11==0.14.0
     # via
     #   httpcore
@@ -88,6 +90,8 @@ pydantic-settings==2.1.0
     # via
     #   -r requirements/requirements.in
     #   fastapi
+pyinstrument==4.6.2
+    # via -r requirements/requirements.in
 pymongo==4.6.1
     # via motor
 python-dateutil==2.8.2
