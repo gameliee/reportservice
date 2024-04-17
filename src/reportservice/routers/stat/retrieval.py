@@ -146,7 +146,6 @@ async def get_person_count_by_id(
         end = datetime.fromisoformat(end)
 
     condition = condition_count_record_by_id(begin, end, staff_code, face_reg_score_threshold, has_mask)
-
     count = await bodyfacename_collection.count_documents(condition)
     return count
 
@@ -160,6 +159,7 @@ async def get_person_record_by_id(
     has_mask: bool = False,
     offset: int = 0,
     limit: int = 10,
+    enable_count: bool = False,
     logger: logging.Logger | None = None,
 ) -> PersonRecordCollection:
     if logger is None:
@@ -169,12 +169,14 @@ async def get_person_record_by_id(
     if not isinstance(end, datetime):
         end = datetime.fromisoformat(end)
 
-    count = await get_person_count_by_id(
-        bodyfacename_collection, staff_code, begin, end, face_reg_score_threshold, has_mask, logger
-    )
+    ret = PersonRecordCollection()
+    if enable_count:
+        ret.count = await get_person_count_by_id(
+            bodyfacename_collection, staff_code, begin, end, face_reg_score_threshold, has_mask, logger
+        )
 
     if limit == 0:
-        return PersonRecordCollection(count=count, values=[])
+        return ret
 
     pipeline = pipeline_get_record_by_id(begin, end, staff_code, face_reg_score_threshold, has_mask, offset, limit)
     logger.debug(f"running get_person_record_by_id pipeline: {pipeline}")
@@ -184,7 +186,8 @@ async def get_person_record_by_id(
         record = PersonRecord.model_validate(document)
         final_result.append(record)
 
-    return PersonRecordCollection(count=count, values=final_result)
+    ret.values = final_result
+    return ret
 
 
 async def get_record_count_by_date_cam(

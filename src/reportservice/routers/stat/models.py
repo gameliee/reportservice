@@ -130,8 +130,8 @@ class PersonRecord(BaseModel):
 
 
 class PersonRecordCollection(BaseModel):
-    count: int
-    values: list[PersonRecord]
+    count: Optional[int] = None
+    values: list[PersonRecord] = []
 
 
 class ByDateCam(BaseModel):

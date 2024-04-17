@@ -45,14 +45,14 @@ def test_api_get_should_checkinout_count(testclient: TestClient, _payload, gener
 def test_api_get_person_record_by_id(testclient: TestClient, _payload, generate_conf):  # noqa: F811
     response = testclient.get(f"{PREFIX}/person_record", params={})
     assert response.status_code == 200, response.json()
-    assert 0 == response.json()["count"]
+    assert response.json()["count"] is None
 
-    params = {"staff_id": "abc", **_payload}
+    params = {"staff_id": "abc", "count": True, **_payload}
     response = testclient.get(f"{PREFIX}/person_record", params=params)
     assert response.status_code == 200, response.json()
     assert 0 == response.json()["count"]
 
-    params = {"staff_id": "267817", "face_reg_score_threshold": 0.1, **_payload}
+    params = {"staff_id": "267817", "face_reg_score_threshold": 0.1, "count": True, **_payload}
     response = testclient.get(f"{PREFIX}/person_record", params=params)
     assert response.status_code == 200, response.json()
     assert 48 == response.json()["count"]

@@ -74,6 +74,7 @@ async def api_get_person_record_by_id(
     has_mask: bool = False,
     offset: NonNegativeInt = 0,
     limit: NonNegativeInt = 10,
+    count: bool = False,
 ) -> PersonRecordCollection:
     """Get the recognition record of a person by staff_code.
     If both begin and end are not provided, the function will return the records for today (local timezone).
@@ -100,6 +101,7 @@ async def api_get_person_record_by_id(
         offset=offset,
         limit=limit,
         logger=logger,
+        enable_count=count,
     )
 
 

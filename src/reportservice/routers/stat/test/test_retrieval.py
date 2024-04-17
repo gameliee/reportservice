@@ -151,17 +151,24 @@ async def test_get_person_count_by_id(fixture_bodyfacename_collection):
 @pytest.mark.asyncio
 async def test_get_person_record_by_id(fixture_bodyfacename_collection, test_time):
     begin, end = test_time
+
+    # testcase: do not count
     records = await get_person_record_by_id(fixture_bodyfacename_collection, None, begin, end, 0.1, False, limit=0)
+    assert records.count is None
+
+    # testcase: do count
+    records = await get_person_record_by_id(
+        fixture_bodyfacename_collection, None, begin, end, 0.1, False, enable_count=True
+    )
     assert records.count == 100
 
-    records = await get_person_record_by_id(fixture_bodyfacename_collection, None, begin, end, 0.1, False)
-    assert records.count == 100
-
-    records = await get_person_record_by_id(fixture_bodyfacename_collection, "267817", begin, end, 0.1, False)
+    records = await get_person_record_by_id(
+        fixture_bodyfacename_collection, "267817", begin, end, 0.1, False, enable_count=True
+    )
     assert records.count == 48
     assert len(records.values) == 10
     records = await get_person_record_by_id(
-        fixture_bodyfacename_collection, "267817", begin, end, 0.1, False, offset=45
+        fixture_bodyfacename_collection, "267817", begin, end, 0.1, False, offset=45, enable_count=True
     )
     assert records.count == 48
     assert len(records.values) == 3
