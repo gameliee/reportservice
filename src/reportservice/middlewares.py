@@ -17,7 +17,7 @@ def register_profiling_middleware(app: ExtendedFastAPI):
             """
             profiling = request.query_params.get("profile", False)
             if profiling:
-                profiler = Profiler(interval=0.001, async_mode="enabled")
+                profiler = Profiler(interval=0.001, async_mode="strict")
                 profiler.start()
                 await call_next(request)
                 profiler.stop()
