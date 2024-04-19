@@ -92,11 +92,12 @@ class ContentModelUpdate(BaseModel):
     subject_template: Optional[JinjaStr] = None
     body_template: Optional[JinjaStr] = None
     attach: Optional[bool] = None
+    attach_name_template: Optional[JinjaStr] = None
     checkin_begin: Optional[datetime] = None
     checkin_duration: Optional[timedelta] = None
     checkout_begin: Optional[datetime] = None
     checkout_duration: Optional[timedelta] = None
-    attach_name_template: Optional[JinjaStr] = None
+    query_parameters: Optional[QueryParamters] = None
 
     model_config = ConfigDict(
         json_schema_extra={
