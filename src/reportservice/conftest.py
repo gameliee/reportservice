@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
-from reportservice.app import app
+
 from .settings import settings
 
 
@@ -18,6 +18,10 @@ def monkeypatch_session():
 def patch_settings(monkeypatch_session, temp_log_file, random_database_name):
     monkeypatch_session.setattr(settings, "LOG_FILE", temp_log_file)
     monkeypatch_session.setattr(settings, "DB_REPORT_NAME", random_database_name)
+    monkeypatch_session.setattr(settings, "PROFILING_ENABLED", True)
+    assert settings.LOG_FILE == temp_log_file
+    assert settings.DB_REPORT_NAME == random_database_name
+    assert settings.PROFILING_ENABLED is True
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -33,6 +37,8 @@ def testsettings(monkeypatch_session):
 
 
 @pytest.fixture(scope="session")
-def testclient():
+def testclient(patch_settings):
+    from reportservice.app import app
+
     with TestClient(app) as client:
         yield client
