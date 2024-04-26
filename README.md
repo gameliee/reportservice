@@ -1,6 +1,6 @@
 # Service for generate and send reports
 
-[![Build Status](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&build=last)](http://192.168.44.233:8080/job/STFace_reportservice/lastBuild/) [![Coverage](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&subject=Coverage&color=${colorLineCoverage}&status=${lineCoverage})](http://192.168.44.233:8080/job/STFace_reportservice/lastBuild/coverage/)
+[![Build Status](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&build=last)](http://192.168.44.233:8080/job/STFace_reportservice/lastBuild/) [![Coverage](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&subject=Coverage&color=${colorLineCoverage}&status=${lineCoverage})](http://192.168.44.233:8080/job/STFace_reportservice/lastBuild/coverage/) ![Image](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&config=dockerbuild)
 
 ## Run
 

@@ -1,5 +1,5 @@
 def projectName = "testreportservice${UUID.randomUUID().toString()}"
-def registry = '172.23.111.200:5001'
+def registry = '192.168.44.228:5001'
 pipeline {
     agent any
 
@@ -38,14 +38,13 @@ pipeline {
                     sh "docker compose -p ${projectName} cp reportservice:/usr/src/app/coverage.xml ."
                     recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'coverage.xml']],
                            qualityGates: [[threshold: 95.0, metric: 'LINE', baseline: 'PROJECT', unstable: true]])
-                    echo '${branchCoverage}'
                     echo 'Coverage results embeddable build status build URL is:\n' +
                         env.BUILD_URL + '/badge/icon' +
-                        '?subject=Coverage&status=${branchCoverage}&color=${colorBranchCoverage}'
+                        '?subject=Coverage&status=${lineCoverage}&color=${colorLineCoverage}'
                     echo 'Coverage results embeddable build status job URL is:\n' +
                         env.JOB_URL + '/badge/icon' +
-                        '?subject=Coverage&status=${branchCoverage}&color=${colorBranchCoverage}'
-                    // cobertura coberturaReportFile: 'coverage.xml'
+                        '?subject=Coverage&status=${lineCoverage}&color=${colorLineCoverage}'
+                // cobertura coberturaReportFile: 'coverage.xml'
                 }
             }
         }
@@ -54,12 +53,15 @@ pipeline {
                 script {
                     def scmTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                     def version = scmTag ?: env.BUILD_NUMBER
-                    def image = docker.build("${registry}/reportservice:jenkins_${version}", '-f ./tests/Dockerfile .')
-                    println("Create image ${registry}/reportservice:jenkins_${version}, do not push yet")
-                // docker.withRegistry(registry) {
-                //     image.push("jenkins_${version}")
-                //     // image.push("latest")
-                // }
+                    def imagename = "${registry}/reportservice:jenkins_${version}"
+                    def image = docker.build(imagename, '-f ./tests/Dockerfile .')
+                    println("Create image ${registry}/reportservice:jenkins_${version} and push to ${registry}")
+                    addEmbeddableBadgeConfiguration(id: "dockerbuild", subject: 'Image', status: imagename, color: 'blue')
+                    println("Docker build results embeddable build status job URL is: ${env.JOB_URL}/badge/icon?config=dockerbuild")
+                    docker.withRegistry("http://${registry}", 'docker_nexus') {
+                        image.push("jenkins_${version}")
+                    // image.push("latest")
+                    }
                 }
             }
         }
