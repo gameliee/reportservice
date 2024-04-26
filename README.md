@@ -1,8 +1,6 @@
 # Service for generate and send reports
 
-[![Build Status](http://172.23.111.200:8080/buildStatus/icon?job=reportservice2&build=last)](http://172.23.111.200:8080/job/reportservice2/)
-
-![Coverage](http://172.23.111.200:8080/buildStatus/icon?job=reportservice2&subject=Coverage&color=${colorInstructionCoverage}&status=${instructionCoverage})
+[![Build Status](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&build=last)](http://192.168.44.233:8080/job/STFace_reportservice/lastBuild/) ![Coverage](http://192.168.44.233:8080/buildStatus/icon?job=STFace_reportservice&subject=Coverage&color=${colorLineCoverage}&status=${lineCoverage})
 
 ## Run
 
