@@ -6,7 +6,7 @@ networks:
 
 services:
   mongodb:
-    image: 172.23.111.200:5001/bitnami/mongodb:7.0
+    image: dat.local:5001/bitnami/mongodb:7.0
     volumes:
       - ./mongo:/docker-entrypoint-initdb.d:ro
     expose:
