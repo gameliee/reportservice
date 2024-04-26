@@ -28,7 +28,7 @@ def createtestcontent(testclient, generate_conf):  # noqa: F811
     testcontentid = response.json()["_id"]
     yield testcontentid
     response = testclient.delete(f"{PREFIX}/{testcontentid}")
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 
 def test_list_contents(testclient: TestClient):

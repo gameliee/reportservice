@@ -31,7 +31,7 @@ def fakecontentid(testclient):
     assert response.status_code == 201
     yield testid
     response = testclient.delete(f"{CONTENT_PREFIX}/{testid}")
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 
 def test_create_task(testclient, fakecontentid: str):
@@ -69,7 +69,7 @@ def createtesttask(testclient, fakecontentid: str):  # noqa: F811
     testid = response.json()["_id"]
     yield testid
     response = testclient.delete(f"{PREFIX}/{testid}")
-    assert response.status_code == 200, response.json()
+    assert response.status_code == 204, response.json()
 
 
 def test_content_get_tasks(testclient: TestClient, createtesttask: str, fakecontentid: str):
